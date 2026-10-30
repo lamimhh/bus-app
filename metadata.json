@@ -1,0 +1,6 @@
+{
+  "name": "SADA SHUNDORI",
+  "description": "A campus bus companion app for Dhaka University affiliated 7 Colleges.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
