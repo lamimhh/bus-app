@@ -7,6 +7,7 @@ import com.example.model.AppScreen
 import com.example.model.BottleneckZone
 import com.example.model.BusStatus
 import com.example.model.BusStop
+import com.example.model.CommunityChatMessage
 import com.example.model.Complaint
 import com.example.model.CrewMember
 import com.example.model.DelayInsight
@@ -74,6 +75,60 @@ class BusViewModel(
 
   private val _mapZoom = MutableStateFlow(1.0f)
   val mapZoom: StateFlow<Float> = _mapZoom.asStateFlow()
+
+  // Finding nearest pickup state & recommended stop
+  private val _isFindingNearestStop = MutableStateFlow(false)
+  val isFindingNearestStop: StateFlow<Boolean> = _isFindingNearestStop.asStateFlow()
+
+  private val _recommendedStopId = MutableStateFlow("stop_5_tongi_college")
+  val recommendedStopId: StateFlow<String> = _recommendedStopId.asStateFlow()
+
+  // Real-time Community Chat
+  private val _communityChatMessages = MutableStateFlow<List<CommunityChatMessage>>(
+    listOf(
+      CommunityChatMessage(
+        id = "chat_1",
+        senderName = "Hafiz Lamim",
+        senderCollege = "Dhaka College",
+        message = "Bus Gazipura 27 cross korche, speed 48 km/h. Smooth run hocche.",
+        timestamp = "07:22 AM",
+        category = "Location"
+      ),
+      CommunityChatMessage(
+        id = "chat_2",
+        senderName = "Tanvir Ahmed",
+        senderCollege = "Govt. Titumir College",
+        message = "Tongi Bridge er age kono jam ache kina keu bolte parben?",
+        timestamp = "07:24 AM",
+        category = "Traffic"
+      ),
+      CommunityChatMessage(
+        id = "chat_3",
+        senderName = "Rahim Mia (Pilot)",
+        senderCollege = "Sada Shundori Crew",
+        message = "Bridge clear ache. InshaAllah 5 min er moddhe Tongi College Gate thakbo.",
+        timestamp = "07:25 AM",
+        category = "Location"
+      ),
+      CommunityChatMessage(
+        id = "chat_4",
+        senderName = "Sumaiya Khan",
+        senderCollege = "Eden Mohila College",
+        message = "Airport 3rd gate e kon pashe wait korbo? Overbridge er niche?",
+        timestamp = "07:27 AM",
+        category = "General"
+      ),
+      CommunityChatMessage(
+        id = "chat_5",
+        senderName = "Sayeed Hasan",
+        senderCollege = "Dhaka College",
+        message = "Hae overbridge er thik shamne bus stop e darao. Seat praay full, tobe standing space ache.",
+        timestamp = "07:28 AM",
+        category = "General"
+      )
+    )
+  )
+  val communityChatMessages: StateFlow<List<CommunityChatMessage>> = _communityChatMessages.asStateFlow()
 
   val userProfile: StateFlow<UserProfile> = repository.userProfile
   val busStatus: StateFlow<BusStatus> = repository.busStatus
@@ -310,5 +365,45 @@ class BusViewModel(
 
   fun processGpsReading(lat: Double, lng: Double, speedKmh: Int, accuracyMeters: Float = 5.0f) {
     repository.processLocationUpdate(lat, lng, speedKmh, accuracyMeters)
+  }
+
+  fun sendCommunityMessage(text: String, category: String = "Traffic") {
+    if (text.isBlank()) return
+    val user = userProfile.value
+    val newMsg = CommunityChatMessage(
+      id = "msg_${System.currentTimeMillis()}",
+      senderName = user.name.ifBlank { "Lamim" },
+      senderCollege = user.college.ifBlank { "Dhaka College" },
+      message = text.trim(),
+      timestamp = "Just now",
+      isMe = true,
+      category = category
+    )
+    _communityChatMessages.update { listOf(newMsg) + it }
+  }
+
+  fun selectRecommendedStop(stopId: String) {
+    _recommendedStopId.value = stopId
+    selectStop(stopId)
+  }
+
+  fun findNearestPickupPoint(userLat: Double? = null, userLon: Double? = null) {
+    viewModelScope.launch {
+      _isFindingNearestStop.value = true
+      delay(750)
+      val stops = allStops.value
+      val target = if (userLat != null && userLon != null) {
+        stops.minByOrNull { stop ->
+          val dLat = stop.latitude - userLat
+          val dLon = stop.longitude - userLon
+          dLat * dLat + dLon * dLon
+        } ?: stops.find { it.id == "stop_5_tongi_college" } ?: stops[4]
+      } else {
+        stops.find { it.id == "stop_5_tongi_college" } ?: stops.firstOrNull { !it.isPassed } ?: stops[4]
+      }
+      _recommendedStopId.value = target.id
+      selectStop(target.id)
+      _isFindingNearestStop.value = false
+    }
   }
 }

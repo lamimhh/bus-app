@@ -27,7 +27,7 @@ data class UserProfile(
   val college: String = "Dhaka College",
   val affiliation: String = "DU Affiliated 7 Colleges",
   val studentId: String = "DC-2022-FB-149",
-  val session: String = "2021-2022",
+  val session: String = "2022-23",
   val bloodGroup: String = "B+",
   val emergencyContact: String = "+880 1712-345678",
   val passId: String = "SS-DU7C-9042",
@@ -141,4 +141,14 @@ data class CrewMember(
   val collegeAffiliation: String,
   val rating: Double,
   val bio: String
+)
+
+data class CommunityChatMessage(
+  val id: String,
+  val senderName: String,
+  val senderCollege: String,
+  val message: String,
+  val timestamp: String,
+  val isMe: Boolean = false,
+  val category: String = "Traffic" // Traffic, Location, General
 )

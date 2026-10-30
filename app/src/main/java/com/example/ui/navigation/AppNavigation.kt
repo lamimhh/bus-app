@@ -88,17 +88,21 @@ fun AppNavigation(
   }
 
   val showBottomBar = currentScreen in listOf(
+    AppScreen.NOTICES
+  )
+
+  val showTopBar = currentScreen !in listOf(
+    AppScreen.WELCOME,
+    AppScreen.DASHBOARD,
     AppScreen.PICKUP_FINDER,
+    AppScreen.BOARDING,
     AppScreen.INSIGHTS,
-    AppScreen.NOTICES,
     AppScreen.PROFILE
   )
 
-  val showTopBar = currentScreen !in listOf(AppScreen.WELCOME, AppScreen.DASHBOARD)
-
   Scaffold(
     modifier = modifier.fillMaxSize(),
-    containerColor = if (currentScreen == AppScreen.DASHBOARD) Color(0xFFF9F6F0) else BackgroundDark,
+    containerColor = if (currentScreen in listOf(AppScreen.DASHBOARD, AppScreen.PICKUP_FINDER, AppScreen.BOARDING, AppScreen.INSIGHTS, AppScreen.PROFILE)) Color(0xFFFAF7F2) else BackgroundDark,
     topBar = {
       if (showTopBar) {
         TopAppBar(
