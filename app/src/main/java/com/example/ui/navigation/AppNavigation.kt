@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.model.AppScreen
 import com.example.ui.screens.BrandSplashScreen
+import com.example.ui.screens.CommunityScreen
 import com.example.ui.screens.ComplaintBoxScreen
 import com.example.ui.screens.CrewScreen
 import com.example.ui.screens.CrewSectionScreen
@@ -86,7 +87,7 @@ fun AppNavigation(
 
   // Handle system back navigation
   BackHandler(enabled = currentScreen != AppScreen.DASHBOARD && isLoggedIn) {
-    if (currentScreen == AppScreen.COMPLAINT_BOX) {
+    if (currentScreen in listOf(AppScreen.COMPLAINT_BOX, AppScreen.COMMUNITY)) {
       viewModel.navigateTo(AppScreen.PROFILE)
     } else {
       viewModel.navigateBack()
@@ -105,12 +106,13 @@ fun AppNavigation(
     AppScreen.PROFILE,
     AppScreen.COMPLAINT_BOX,
     AppScreen.NOTICES,
-    AppScreen.CREW
+    AppScreen.CREW,
+    AppScreen.COMMUNITY
   )
 
   Scaffold(
     modifier = modifier.fillMaxSize(),
-    containerColor = if (currentScreen in listOf(AppScreen.DASHBOARD, AppScreen.PICKUP_FINDER, AppScreen.BOARDING, AppScreen.INSIGHTS, AppScreen.PROFILE, AppScreen.COMPLAINT_BOX, AppScreen.NOTICES, AppScreen.CREW)) Color(0xFFFAF7F2) else BackgroundDark,
+    containerColor = if (currentScreen in listOf(AppScreen.DASHBOARD, AppScreen.PICKUP_FINDER, AppScreen.BOARDING, AppScreen.INSIGHTS, AppScreen.PROFILE, AppScreen.COMPLAINT_BOX, AppScreen.NOTICES, AppScreen.CREW, AppScreen.COMMUNITY)) Color(0xFFFAF7F2) else BackgroundDark,
     topBar = {
       if (showTopBar) {
         TopAppBar(
@@ -314,6 +316,10 @@ fun AppNavigation(
         AppScreen.COMPLAINT_BOX -> ComplaintBoxScreen(
           viewModel = viewModel,
           onBackToProfile = { viewModel.navigateTo(AppScreen.PROFILE) }
+        )
+        AppScreen.COMMUNITY -> CommunityScreen(
+          viewModel = viewModel,
+          onBackClick = { viewModel.navigateBack() }
         )
       }
     }

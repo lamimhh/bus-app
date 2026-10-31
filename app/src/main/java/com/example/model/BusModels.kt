@@ -10,7 +10,8 @@ enum class AppScreen(val label: String) {
   NOTICES("Notices & Reports"),
   CREW("Crew & Committee"),
   BRAND_SPLASH("Brand Showcase"),
-  COMPLAINT_BOX("Complaint Box")
+  COMPLAINT_BOX("Complaint Box"),
+  COMMUNITY("Official Community")
 }
 
 enum class BusConnectionState(val label: String) {

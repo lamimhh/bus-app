@@ -189,7 +189,7 @@ fun ProfileScreen(
       // 4. COMMUNITY SECTION: Community and About tiles (Spec 4)
       item {
         CommunitySection(
-          onCommunityClick = { isCommunityModalOpen = true },
+          onCommunityClick = { viewModel.navigateTo(AppScreen.COMMUNITY) },
           onAboutClick = { isAboutModalOpen = true }
         )
       }
