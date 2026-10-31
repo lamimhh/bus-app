@@ -9,7 +9,8 @@ enum class AppScreen(val label: String) {
   PROFILE("Profile Hub"),
   NOTICES("Notices & Reports"),
   CREW("Crew & Committee"),
-  BRAND_SPLASH("Brand Showcase")
+  BRAND_SPLASH("Brand Showcase"),
+  COMPLAINT_BOX("Complaint Box")
 }
 
 enum class BusConnectionState(val label: String) {
@@ -116,6 +117,8 @@ data class Notice(
   val summary: String,
   val fullBody: String,
   val isUrgent: Boolean = false,
+  val isPinned: Boolean = false,
+  val referenceCode: String = "SS-REF-2026/08",
   val author: String = "DU 7 Colleges Transport Committee"
 )
 
@@ -128,7 +131,11 @@ data class Complaint(
   val contactPhone: String,
   val status: String,
   val timestamp: String,
-  val officialResponse: String? = null
+  val officialResponse: String? = null,
+  val submitterName: String? = null,
+  val department: String? = null,
+  val imageUri: String? = null,
+  val allowContact: Boolean = true
 )
 
 data class CrewMember(

@@ -273,13 +273,23 @@ class BusViewModel(
     category: String,
     title: String,
     description: String,
-    contactPhone: String
+    contactPhone: String,
+    busNumber: String = "SS-01",
+    department: String? = null,
+    submitterName: String? = null,
+    imageUri: String? = null,
+    allowContact: Boolean = true
   ) {
     repository.submitComplaint(
       category = category,
       title = title,
       description = description,
-      contactPhone = contactPhone
+      contactPhone = contactPhone,
+      busNumber = busNumber,
+      department = department,
+      submitterName = submitterName,
+      imageUri = imageUri,
+      allowContact = allowContact
     )
     _complaintSuccessMessage.value = "Report logged! Route team will update your ticket within 2 hours."
   }

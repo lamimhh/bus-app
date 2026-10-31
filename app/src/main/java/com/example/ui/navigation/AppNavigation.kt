@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.model.AppScreen
 import com.example.ui.screens.BrandSplashScreen
+import com.example.ui.screens.ComplaintBoxScreen
+import com.example.ui.screens.CrewScreen
 import com.example.ui.screens.CrewSectionScreen
 import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.LiveDashboardScreen
@@ -84,12 +86,15 @@ fun AppNavigation(
 
   // Handle system back navigation
   BackHandler(enabled = currentScreen != AppScreen.DASHBOARD && isLoggedIn) {
-    viewModel.navigateBack()
+    if (currentScreen == AppScreen.COMPLAINT_BOX) {
+      viewModel.navigateTo(AppScreen.PROFILE)
+    } else {
+      viewModel.navigateBack()
+    }
   }
 
-  val showBottomBar = currentScreen in listOf(
-    AppScreen.NOTICES
-  )
+  // Notice Board and other standalone views do not show bottom navigation bar
+  val showBottomBar = false
 
   val showTopBar = currentScreen !in listOf(
     AppScreen.WELCOME,
@@ -97,12 +102,15 @@ fun AppNavigation(
     AppScreen.PICKUP_FINDER,
     AppScreen.BOARDING,
     AppScreen.INSIGHTS,
-    AppScreen.PROFILE
+    AppScreen.PROFILE,
+    AppScreen.COMPLAINT_BOX,
+    AppScreen.NOTICES,
+    AppScreen.CREW
   )
 
   Scaffold(
     modifier = modifier.fillMaxSize(),
-    containerColor = if (currentScreen in listOf(AppScreen.DASHBOARD, AppScreen.PICKUP_FINDER, AppScreen.BOARDING, AppScreen.INSIGHTS, AppScreen.PROFILE)) Color(0xFFFAF7F2) else BackgroundDark,
+    containerColor = if (currentScreen in listOf(AppScreen.DASHBOARD, AppScreen.PICKUP_FINDER, AppScreen.BOARDING, AppScreen.INSIGHTS, AppScreen.PROFILE, AppScreen.COMPLAINT_BOX, AppScreen.NOTICES, AppScreen.CREW)) Color(0xFFFAF7F2) else BackgroundDark,
     topBar = {
       if (showTopBar) {
         TopAppBar(
@@ -298,8 +306,15 @@ fun AppNavigation(
         AppScreen.INSIGHTS -> InsightsScreen(viewModel = viewModel)
         AppScreen.NOTICES -> NoticeAndComplaintScreen(viewModel = viewModel)
         AppScreen.PROFILE -> ProfileScreen(viewModel = viewModel)
-        AppScreen.CREW -> CrewSectionScreen(viewModel = viewModel)
+        AppScreen.CREW -> CrewScreen(
+          viewModel = viewModel,
+          onBackClick = { viewModel.navigateBack() }
+        )
         AppScreen.BRAND_SPLASH -> BrandSplashScreen(viewModel = viewModel)
+        AppScreen.COMPLAINT_BOX -> ComplaintBoxScreen(
+          viewModel = viewModel,
+          onBackToProfile = { viewModel.navigateTo(AppScreen.PROFILE) }
+        )
       }
     }
   }

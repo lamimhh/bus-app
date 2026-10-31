@@ -181,7 +181,7 @@ fun ProfileScreen(
         BusServicesSection(
           onNoticeClick = { viewModel.navigateTo(AppScreen.NOTICES) },
           onControlPanelClick = { isControlPanelModalOpen = true },
-          onComplaintBoxClick = { viewModel.navigateTo(AppScreen.NOTICES) },
+          onComplaintBoxClick = { viewModel.navigateTo(AppScreen.COMPLAINT_BOX) },
           onCrewClick = { viewModel.navigateTo(AppScreen.CREW) }
         )
       }

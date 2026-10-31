@@ -85,4 +85,23 @@ class ExampleUnitTest {
     repository.loginUser("student.du7c@gmail.com")
     assertEquals("student.du7c@gmail.com", repository.userProfile.value.email)
   }
+
+  @Test
+  fun testComplaintWithDetails() {
+    val repository = BusRepository()
+    val complaint = repository.submitComplaint(
+      category = "Bus Timing & Punctuality",
+      title = "Delayed departure from Tongi",
+      description = "Bus was delayed by 25 minutes at morning rush hour.",
+      contactPhone = "+8801712345678",
+      busNumber = "SS-01 (Uttara - Gazipur)",
+      department = "Economics",
+      submitterName = "Rashidul Islam",
+      allowContact = true
+    )
+    assertEquals("Rashidul Islam", complaint.submitterName)
+    assertEquals("Economics", complaint.department)
+    assertTrue(complaint.allowContact)
+    assertEquals("Submitted", complaint.status)
+  }
 }

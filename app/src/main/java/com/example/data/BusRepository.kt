@@ -321,23 +321,63 @@ class BusRepository {
     listOf(
       Notice(
         id = "not_1",
-        title = "Special Exam Schedule: DU 7 Colleges Honours Finals",
-        category = "Schedule",
-        date = "Today, 06:30 AM",
-        summary = "SADA SHUNDORI departure operating with strict corridor punctuality for examinees.",
-        fullBody = "Attention examinees of Dhaka College, Eden Mohila College, Titumir College, and other affiliated institutions. SADA SHUNDORI is operating on its exact morning schedule.",
+        title = "Route Adjustment: Old Campus to Tongi Segment",
+        category = "Route",
+        date = "24 Aug 2026",
+        summary = "Due to ongoing flyover infrastructure expansion near Station Road Tongi, morning trips detour via Cherag Ali auxiliary link.",
+        fullBody = "OFFICIAL TRANSPORT ADVISORY\n\nTo all students of Govt. Titumir College, Dhaka College, Eden Mohila College, and affiliated campuses:\n\n1. ROUTE ALTERATION: Effective immediately, SADA SHUNDORI (Bus SS-01) will route via the Cherag Ali auxiliary corridor instead of the direct bridge intersection to avoid heavy congestion.\n2. PICKUP TIMINGS: Tongi College Gate and Station Road passengers should arrive 5 minutes prior to regular boarding times (07:35 AM sharp).\n3. EXAM BATCH PRIORITY: Students appearing for Honours final examinations will receive front-row seating priority.\n4. REAL-TIME TRACKING: Telemetry is actively synced on the Live Tracker. If heavy bottlenecks occur, the captain is authorized to take the Elevated Expressway ramp.\n\nBy Order of the Fleet Management Sub-Committee.",
         isUrgent = true,
-        author = "Central Transport Sub-Committee"
+        isPinned = true,
+        referenceCode = "SS-NOT/2026/08-24",
+        author = "Central Fleet Logistics Desk"
       ),
       Notice(
         id = "not_2",
-        title = "Elevated Expressway Routing Advisory",
-        category = "Route",
-        date = "Yesterday",
-        summary = "When Elevated Route is active, passenger drop-offs between Airport and Farmgate use designated ramps.",
-        fullBody = "Passengers boarding after Airport please monitor the Service Update card for real-time elevation alerts.",
+        title = "Saturday Extra Service",
+        category = "Schedule",
+        date = "23 Aug 2026",
+        summary = "Special weekend trip scheduled for departmental practical examinations and central library batches.",
+        fullBody = "WEEKEND EXTRA TRIP NOTICE\n\n1. DEPARTURE TIME: 08:00 AM from National University Gate.\n2. RETURN TRIP: 04:30 PM sharp from Curzon Hall / Nilkhet terminal.\n3. PASS VALIDITY: Standard digital pass valid with no supplemental charges.\n4. CREW ON DUTY: Senior Pilot Rahim Mia & Conductor Kalam Hossain.\n\nAll registered students may board without prior reservation.",
         isUrgent = false,
-        author = "Fleet Operations Desk"
+        isPinned = false,
+        referenceCode = "SS-SCH/2026/08-23",
+        author = "Route Operations Coordinator"
+      ),
+      Notice(
+        id = "not_3",
+        title = "Boarding Point Change: Azampur",
+        category = "Alert",
+        date = "22 Aug 2026",
+        summary = "Temporary relocation of the Azampur passenger queue to the east side of Footover Bridge.",
+        fullBody = "BOARDING POINT RELOCATION ADVISORY\n\nDue to civil repair work on the northbound footpath near Sector 3 Azampur bus stand:\n\n1. RELOCATED STOP: Please assemble 30 meters forward, directly under the pedestrian footover bridge eastern pillar.\n2. SIGNAGE: Look for the SADA SHUNDORI reflective student pickup banner.\n3. DURATION: Expected to remain in effect through Wednesday evening.\n\nPlease avoid standing on the active carriageway for student safety.",
+        isUrgent = false,
+        isPinned = false,
+        referenceCode = "SS-LOC/2026/08-22",
+        author = "Safety & Traffic Sub-Committee"
+      ),
+      Notice(
+        id = "not_4",
+        title = "SADA SHUNDORI × SHOUHARDO Get-Together",
+        category = "Community",
+        date = "21 Aug 2026",
+        summary = "Annual joint gathering and cultural appreciation assembly with SHOUHARDO fleet members.",
+        fullBody = "ANNUAL FLEET REUNION & WELCOME CEREMONY\n\nCordially inviting all daily commuters, student coordinators, and transport volunteers:\n\n• Venue: Curzon Hall Auditorium & TSC Grounds\n• Date: Friday, September 4, 2026 at 03:30 PM\n• Agenda: Pilot & crew recognition, annual safety report, cultural performances, and evening refreshments.\n\nAll students are warmly invited to join and celebrate campus fraternity.",
+        isUrgent = false,
+        isPinned = false,
+        referenceCode = "SS-EVT/2026/08-21",
+        author = "Student Convener Team"
+      ),
+      Notice(
+        id = "not_5",
+        title = "Passenger Guidelines Reminder",
+        category = "Guidelines",
+        date = "20 Aug 2026",
+        summary = "Essential code of conduct, digital pass verification, and priority seating protocols.",
+        fullBody = "CAMPUS BUS COMMUTE & DISCIPLINE GUIDELINES\n\n1. DIGITAL PASS: Keep your Pass Hub verification ready for spot checks.\n2. PRIORITY SEATING: Reserve the front seats for female students and examinees.\n3. SAFETY: Strictly avoid boarding or deboarding a moving vehicle.\n4. COMPLAINT & FEEDBACK: The Complaint Box is available 24/7 to report issues, lost items, or staff misconduct.\n\nLet us cooperate to maintain a peaceful, punctual, and safe transit environment.",
+        isUrgent = false,
+        isPinned = false,
+        referenceCode = "SS-DOC/2026/08-20",
+        author = "Fleet Discipline Committee"
       )
     )
   )
@@ -648,7 +688,17 @@ class BusRepository {
     }
   }
 
-  fun submitComplaint(category: String, title: String, description: String, contactPhone: String, busNumber: String = "SS-01"): Complaint {
+  fun submitComplaint(
+    category: String,
+    title: String,
+    description: String,
+    contactPhone: String,
+    busNumber: String = "SS-01",
+    department: String? = null,
+    submitterName: String? = null,
+    imageUri: String? = null,
+    allowContact: Boolean = true
+  ): Complaint {
     val newComplaint = Complaint(
       id = "comp_${UUID.randomUUID().toString().take(6)}",
       category = category,
@@ -658,7 +708,11 @@ class BusRepository {
       contactPhone = contactPhone,
       status = "Submitted",
       timestamp = "Just now",
-      officialResponse = "Acknowledged by Route Convener team. We are investigating."
+      officialResponse = "Acknowledged by Route Convener team. We are investigating.",
+      submitterName = submitterName,
+      department = department,
+      imageUri = imageUri,
+      allowContact = allowContact
     )
     _complaints.update { listOf(newComplaint) + it }
     return newComplaint
