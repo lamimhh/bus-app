@@ -45,7 +45,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -96,11 +99,13 @@ fun CommunityScreen(
       .background(CreamBackground)
       .testTag("community_screen")
   ) {
+    val view = LocalView.current
     Column(
       modifier = Modifier
         .fillMaxSize()
+        .statusBarsPadding()
         .verticalScroll(scrollState)
-        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .padding(horizontal = 16.dp, vertical = 2.dp)
         .padding(bottom = 36.dp)
     ) {
       // 1. TOP BAR (Back Button + SADA SHUNDORI Logo Crest)
@@ -108,7 +113,7 @@ fun CommunityScreen(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
           .fillMaxWidth()
-          .padding(vertical = 8.dp)
+          .padding(vertical = 4.dp)
       ) {
         // Back Button
         Surface(
@@ -117,7 +122,10 @@ fun CommunityScreen(
           border = BorderStroke(1.dp, CardBorderColor),
           modifier = Modifier
             .size(38.dp)
-            .clickable { onBackClick() }
+            .clickable {
+              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+              onBackClick()
+            }
             .testTag("button_back_community")
         ) {
           Box(contentAlignment = Alignment.Center) {

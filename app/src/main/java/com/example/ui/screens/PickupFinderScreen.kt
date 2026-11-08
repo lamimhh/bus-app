@@ -97,7 +97,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -241,7 +243,7 @@ fun PickupFinderScreen(
     ) {
       // 1. BRAND HEADER (SADA SHUNDORI + Avatar Pill matching image 2)
       item {
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         BoardingHeader(
           userProfile = userProfile,
           onProfileClick = { viewModel.navigateTo(AppScreen.PROFILE) }
@@ -361,22 +363,16 @@ fun PickupFinderScreen(
 
       // Space at bottom for floating bottom navigation bar
       item {
-        Spacer(modifier = Modifier.height(96.dp))
+        Spacer(modifier = Modifier.height(100.dp))
       }
     }
 
-    // 12. FLOATING BOTTOM NAVIGATION BAR (Live Location, Boarding [active], Insights)
-    Box(
-      modifier = Modifier
-        .align(Alignment.BottomCenter)
-        .fillMaxWidth()
-        .navigationBarsPadding()
-    ) {
-      BoardingBottomNavigation(
-        activeScreen = AppScreen.BOARDING,
-        onNavigate = { screen -> viewModel.navigateTo(screen) }
-      )
-    }
+    // 12. BOTTOM NAVIGATION BAR (Attached flush to bottom bounds)
+    BoardingBottomNavigation(
+      activeScreen = AppScreen.BOARDING,
+      onNavigate = { screen -> viewModel.navigateTo(screen) },
+      modifier = Modifier.align(Alignment.BottomCenter)
+    )
 
     // 360 PANORAMA INTERACTIVE MODAL DIALOG
     if (isPanoramaModalOpen) {
@@ -450,13 +446,17 @@ private fun BoardingHeader(
     }
 
     // Right: Profile Avatar Capsule
+    val view = LocalView.current
     Surface(
       shape = RoundedCornerShape(20.dp),
       color = CardBg,
       shadowElevation = if (SadaTheme.isDark) 4.dp else 2.dp,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier
-        .clickable { onProfileClick() }
+        .clickable {
+          view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+          onProfileClick()
+        }
         .testTag("boarding_profile_button")
     ) {
       Row(
@@ -2121,116 +2121,129 @@ private fun BoardingBottomNavigation(
   modifier: Modifier = Modifier
 ) {
   val isDark = SadaTheme.isDark
+  val view = LocalView.current
 
   Surface(
-    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
     color = CardBg,
-    shadowElevation = if (isDark) 16.dp else 12.dp,
+    shadowElevation = if (isDark) 16.dp else 14.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier.fillMaxWidth()
   ) {
-    Row(
+    Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 24.dp, vertical = 10.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
+        .navigationBarsPadding()
     ) {
-      // 1. Live Location Tab (Inactive)
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+      Row(
         modifier = Modifier
-          .clickable { onNavigate(AppScreen.DASHBOARD) }
-          .padding(horizontal = 8.dp, vertical = 4.dp)
-          .testTag("boarding_nav_live_location")
+          .fillMaxWidth()
+          .padding(horizontal = 24.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Icon(
-          imageVector = Icons.Default.LocationOn,
-          contentDescription = "Live Location",
-          tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
-          modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "Live Location",
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Medium,
-          color = if (isDark) Color(0xFF94A3B8) else TextGrey
-        )
-        Spacer(modifier = Modifier.height(7.dp))
-      }
-
-      // 2. Center Boarding Tab (ACTIVE - Red elevated button matching reference)
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.testTag("boarding_nav_boarding_center")
-      ) {
-        Box(
+        // 1. Live Location Tab (Inactive)
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
           modifier = Modifier
-            .size(48.dp)
-            .shadow(if (isDark) 8.dp else 4.dp, CircleShape)
-            .border(
-              width = if (isDark) 2.dp else 1.5.dp,
-              color = if (isDark) Color(0xFFDC2626).copy(alpha = 0.85f) else Color.White,
-              shape = CircleShape
-            )
-            .background(
-              brush = Brush.verticalGradient(
-                colors = listOf(Color(0xFF7A1424), Color(0xFF4A0A14))
-              ),
-              shape = CircleShape
-            ),
-          contentAlignment = Alignment.Center
+            .clickable {
+              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+              onNavigate(AppScreen.DASHBOARD)
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("boarding_nav_live_location")
         ) {
           Icon(
-            imageVector = Icons.Default.DirectionsBus,
-            contentDescription = "Boarding",
-            tint = Color.White,
+            imageVector = Icons.Default.LocationOn,
+            contentDescription = "Live Location",
+            tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
             modifier = Modifier.size(24.dp)
           )
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Live Location",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (isDark) Color(0xFF94A3B8) else TextGrey
+          )
+          Spacer(modifier = Modifier.height(7.dp))
         }
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "Boarding",
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Bold,
-          color = if (isDark) Color(0xFFF8FAFC) else RouteRemaining
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        // Red indicator pill underneath
-        Box(
-          modifier = Modifier
-            .width(26.dp)
-            .height(3.dp)
-            .background(
-              if (isDark) Color(0xFFDC2626) else RouteRemaining,
-              RoundedCornerShape(2.dp)
-            )
-        )
-      }
 
-      // 3. Insights Tab (Inactive)
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-          .clickable { onNavigate(AppScreen.INSIGHTS) }
-          .padding(horizontal = 8.dp, vertical = 4.dp)
-          .testTag("boarding_nav_insights")
-      ) {
-        Icon(
-          imageVector = Icons.Default.BarChart,
-          contentDescription = "Insights",
-          tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
-          modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "Insights",
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Medium,
-          color = if (isDark) Color(0xFF94A3B8) else TextGrey
-        )
-        Spacer(modifier = Modifier.height(7.dp))
+        // 2. Center Boarding Tab (ACTIVE - Red elevated button matching reference)
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier.testTag("boarding_nav_boarding_center")
+        ) {
+          Box(
+            modifier = Modifier
+              .size(48.dp)
+              .shadow(if (isDark) 8.dp else 4.dp, CircleShape)
+              .border(
+                width = if (isDark) 2.dp else 1.5.dp,
+                color = if (isDark) Color(0xFFDC2626).copy(alpha = 0.85f) else Color.White,
+                shape = CircleShape
+              )
+              .background(
+                brush = Brush.verticalGradient(
+                  colors = listOf(Color(0xFF7A1424), Color(0xFF4A0A14))
+                ),
+                shape = CircleShape
+              ),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.DirectionsBus,
+              contentDescription = "Boarding",
+              tint = Color.White,
+              modifier = Modifier.size(24.dp)
+            )
+          }
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Boarding",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isDark) Color(0xFFF8FAFC) else RouteRemaining
+          )
+          Spacer(modifier = Modifier.height(4.dp))
+          // Red indicator pill underneath
+          Box(
+            modifier = Modifier
+              .width(26.dp)
+              .height(3.dp)
+              .background(
+                if (isDark) Color(0xFFDC2626) else RouteRemaining,
+                RoundedCornerShape(2.dp)
+              )
+          )
+        }
+
+        // 3. Insights Tab (Inactive)
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier
+            .clickable {
+              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+              onNavigate(AppScreen.INSIGHTS)
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("boarding_nav_insights")
+        ) {
+          Icon(
+            imageVector = Icons.Default.BarChart,
+            contentDescription = "Insights",
+            tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
+            modifier = Modifier.size(24.dp)
+          )
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Insights",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (isDark) Color(0xFF94A3B8) else TextGrey
+          )
+          Spacer(modifier = Modifier.height(7.dp))
+        }
       }
     }
   }

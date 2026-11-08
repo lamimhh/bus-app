@@ -86,7 +86,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -168,7 +170,7 @@ fun ProfileScreen(
     ) {
       // 1. TOP BAR: Brand Logo + Typography on left, Dark Mode Switch on right (Spec 1)
       item {
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         ProfileTopBar(
           isDarkMode = isDarkMode,
           onDarkModeToggle = onThemeToggle
@@ -219,30 +221,42 @@ fun ProfileScreen(
 
       // Extra space for the fixed "BACK TO HOME PAGE" button
       item {
-        Spacer(modifier = Modifier.height(84.dp))
+        Spacer(modifier = Modifier.height(96.dp))
       }
     }
 
     // 6. BOTTOM NAVIGATION REPLACEMENT: Single full-width digital button 'BACK TO HOME PAGE' (Spec 6)
-    Box(
+    val view = LocalView.current
+    Surface(
+      shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+      color = if (isDarkMode) Color(0xFF14080C) else Color(0xFFFAF7F2),
+      shadowElevation = 14.dp,
+      border = androidx.compose.foundation.BorderStroke(1.dp, if (isDarkMode) Color(0xFF331119) else Color(0xFFE8DCD5)),
       modifier = Modifier
         .align(Alignment.BottomCenter)
         .fillMaxWidth()
-        .navigationBarsPadding()
-        .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
-      Button(
-        onClick = { viewModel.navigateTo(AppScreen.DASHBOARD) },
-        shape = RoundedCornerShape(18.dp),
-        colors = ButtonDefaults.buttonColors(
-          containerColor = MaroonDeep
-        ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+      Box(
         modifier = Modifier
           .fillMaxWidth()
-          .height(54.dp)
-          .testTag("btn_back_to_home_page")
+          .navigationBarsPadding()
+          .padding(horizontal = 16.dp, vertical = 10.dp)
       ) {
+        Button(
+          onClick = {
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            viewModel.navigateTo(AppScreen.DASHBOARD)
+          },
+          shape = RoundedCornerShape(18.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaroonDeep
+          ),
+          elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .testTag("btn_back_to_home_page")
+        ) {
         Row(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.Center
@@ -264,6 +278,7 @@ fun ProfileScreen(
         }
       }
     }
+  }
 
     // SADA BUS CONTROL PANEL / MODERATOR MODAL (Unrestricted, showing admin & moderator details - Spec 3b)
     if (isControlPanelModalOpen) {

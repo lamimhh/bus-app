@@ -65,6 +65,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.layout.ContentScale
+import android.view.HapticFeedbackConstants
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -109,7 +111,6 @@ fun InsightsScreen(
   modifier: Modifier = Modifier
 ) {
   val userProfile by viewModel.userProfile.collectAsState()
-  val bottlenecks by viewModel.bottlenecks.collectAsState()
 
   // Delay records matching exact image values (MON +42, TUE +67, WED +28, THU +93, FRI +55, SAT +108, SUN +71)
   val delayRecords = remember {
@@ -128,7 +129,6 @@ fun InsightsScreen(
   var isDateRangeMenuExpanded by remember { mutableStateOf(false) }
   var selectedDay by remember { mutableStateOf<DayDelayItem?>(delayRecords.find { it.isPeak }) }
   var showInfoDialog by remember { mutableStateOf(false) }
-  var isBottlenecksExpanded by remember { mutableStateOf(false) }
 
   Box(
     modifier = modifier
@@ -148,7 +148,7 @@ fun InsightsScreen(
     ) {
       // 1. BRAND HEADER (SADA SHUNDORI + Avatar Capsule)
       item {
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         InsightsHeader(
           userProfile = userProfile,
           onProfileClick = { viewModel.navigateTo(AppScreen.PROFILE) }
@@ -185,33 +185,18 @@ fun InsightsScreen(
         RealTimeNoticeCard()
       }
 
-      // 5. CORRIDOR BOTTLENECKS SECTION (Expandable Insights analytics)
-      item {
-        BottleneckCorridorCard(
-          isExpanded = isBottlenecksExpanded,
-          onToggleExpand = { isBottlenecksExpanded = !isBottlenecksExpanded },
-          bottlenecks = bottlenecks
-        )
-      }
-
       // Bottom padding so items are not hidden by bottom navigation bar
       item {
-        Spacer(modifier = Modifier.height(96.dp))
+        Spacer(modifier = Modifier.height(100.dp))
       }
     }
 
-    // 6. FLOATING BOTTOM NAVIGATION BAR (Live Location, Boarding, Insights [ACTIVE])
-    Box(
-      modifier = Modifier
-        .align(Alignment.BottomCenter)
-        .fillMaxWidth()
-        .navigationBarsPadding()
-    ) {
-      InsightsBottomNavigation(
-        activeScreen = AppScreen.INSIGHTS,
-        onNavigate = { screen -> viewModel.navigateTo(screen) }
-      )
-    }
+    // 6. BOTTOM NAVIGATION BAR (Attached flush to bottom bounds)
+    InsightsBottomNavigation(
+      activeScreen = AppScreen.INSIGHTS,
+      onNavigate = { screen -> viewModel.navigateTo(screen) },
+      modifier = Modifier.align(Alignment.BottomCenter)
+    )
 
     // Explanatory Modal Dialog
     if (showInfoDialog) {
@@ -315,13 +300,17 @@ private fun InsightsHeader(
     }
 
     // Right: Profile Avatar Capsule
+    val view = LocalView.current
     Surface(
       shape = RoundedCornerShape(20.dp),
       color = CardBg,
       shadowElevation = 2.dp,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier
-        .clickable { onProfileClick() }
+        .clickable {
+          view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+          onProfileClick()
+        }
         .testTag("insights_profile_button")
     ) {
       Row(
@@ -792,7 +781,9 @@ private fun JourneyDetailsCard(
   selectedDay: DayDelayItem?,
   modifier: Modifier = Modifier
 ) {
-  val dateText = selectedDay?.let { "${it.date} 2026 (${it.day})" } ?: "19 Oct 2026 (Sun)"
+  val todayDateText = remember {
+    java.text.SimpleDateFormat("dd MMM yyyy (EEE)", java.util.Locale.ENGLISH).format(java.util.Date())
+  }
   val delayText = selectedDay?.let { "+${it.delayMin} min" } ?: "+71 min"
 
   Card(
@@ -853,13 +844,13 @@ private fun JourneyDetailsCard(
         DetailColumnItem(
           icon = Icons.Default.LocationOn,
           label = "Route",
-          value = "Uttara ➔ Campus",
+          value = "Boardbazar to Campus",
           modifier = Modifier.weight(1f)
         )
         DetailColumnItem(
           icon = Icons.Default.DateRange,
           label = "Journey Date",
-          value = dateText,
+          value = todayDateText,
           modifier = Modifier.weight(1f)
         )
       }
@@ -873,18 +864,18 @@ private fun JourneyDetailsCard(
       )
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Row 2: Scheduled Arrival & Actual Arrival
+      // Row 2: Departure Time & Total Distance (spec: '06:55 AM' and '28 km')
       Row(modifier = Modifier.fillMaxWidth()) {
         DetailColumnItem(
           icon = Icons.Default.Schedule,
-          label = "Scheduled Arrival",
-          value = "08:30 PM",
+          label = "Departure Time",
+          value = "06:55 AM",
           modifier = Modifier.weight(1f)
         )
         DetailColumnItem(
-          icon = Icons.Default.Schedule,
-          label = "Actual Arrival",
-          value = "09:41 PM",
+          icon = Icons.Default.DirectionsBus,
+          label = "Total Distance",
+          value = "28 km",
           modifier = Modifier.weight(1f)
         )
       }
@@ -898,7 +889,7 @@ private fun JourneyDetailsCard(
       )
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Row 3: Total Duration & Delay
+      // Row 3: Total Duration & Delay (keeps delay history and minutes late statistics active)
       Row(modifier = Modifier.fillMaxWidth()) {
         DetailColumnItem(
           icon = Icons.Default.HourglassBottom,
@@ -998,117 +989,7 @@ private fun RealTimeNoticeCard(modifier: Modifier = Modifier) {
 }
 
 // -------------------------------------------------------------------------------------------------
-// 5. CORRIDOR BOTTLENECKS SECTION (Expandable insights analytics)
-// -------------------------------------------------------------------------------------------------
-@Composable
-private fun BottleneckCorridorCard(
-  isExpanded: Boolean,
-  onToggleExpand: () -> Unit,
-  bottlenecks: List<com.example.model.BottleneckZone>,
-  modifier: Modifier = Modifier
-) {
-  Card(
-    shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = CardBg),
-    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    modifier = modifier
-      .fillMaxWidth()
-      .testTag("bottleneck_corridor_card")
-  ) {
-    Column(modifier = Modifier.padding(16.dp)) {
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .clickable { onToggleExpand() },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = MaroonPeak,
-            modifier = Modifier.size(18.dp)
-          )
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(
-            text = "Corridor Bottleneck Analysis",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextDark
-          )
-        }
-
-        Icon(
-          imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-          contentDescription = if (isExpanded) "Collapse" else "Expand",
-          tint = TextGrey
-        )
-      }
-
-      AnimatedVisibility(visible = isExpanded) {
-        Column(modifier = Modifier.padding(top = 12.dp)) {
-          bottlenecks.forEachIndexed { index, zone ->
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Column(modifier = Modifier.weight(1f)) {
-                Text(
-                  text = zone.name,
-                  fontSize = 13.sp,
-                  fontWeight = FontWeight.SemiBold,
-                  color = TextDark
-                )
-                Text(
-                  text = "${zone.location} • Rush: ${zone.peakHours}",
-                  fontSize = 11.sp,
-                  color = TextGrey
-                )
-              }
-
-              Surface(
-                color = when (zone.severity) {
-                  "High" -> BadgeBg
-                  else -> NoticeBg
-                },
-                shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                  0.5.dp,
-                  if (zone.severity == "High") MaroonPeak else CardBorderColor
-                )
-              ) {
-                Text(
-                  text = "+${zone.typicalDelayMin} min",
-                  fontSize = 11.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = if (zone.severity == "High") MaroonPeak else TextDark,
-                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-              }
-            }
-
-            if (index < bottlenecks.size - 1) {
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .height(0.5.dp)
-                  .background(CardBorderColor)
-              )
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// -------------------------------------------------------------------------------------------------
-// 6. FLOATING BOTTOM NAVIGATION BAR (Matching 4_cd522351.jpeg)
+// 5. FLOATING BOTTOM NAVIGATION BAR (Matching 4_cd522351.jpeg)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun InsightsBottomNavigation(
@@ -1116,107 +997,120 @@ private fun InsightsBottomNavigation(
   onNavigate: (AppScreen) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val view = LocalView.current
   Surface(
-    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
     color = CardBg,
-    shadowElevation = 12.dp,
+    shadowElevation = 14.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier.fillMaxWidth()
   ) {
-    Row(
+    Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 24.dp, vertical = 10.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
+        .navigationBarsPadding()
     ) {
-      // 1. Live Location Tab (Inactive)
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+      Row(
         modifier = Modifier
-          .clickable { onNavigate(AppScreen.DASHBOARD) }
-          .padding(horizontal = 8.dp, vertical = 4.dp)
-          .testTag("insights_nav_live_location")
+          .fillMaxWidth()
+          .padding(horizontal = 24.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Icon(
-          imageVector = Icons.Default.LocationOn,
-          contentDescription = "Live Location",
-          tint = TextGrey,
-          modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "Live Location",
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Medium,
-          color = TextGrey
-        )
-        Spacer(modifier = Modifier.height(7.dp))
-      }
-
-      // 2. Boarding Tab (Center button, inactive with circle)
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-          .clickable { onNavigate(AppScreen.PICKUP_FINDER) }
-          .padding(horizontal = 8.dp, vertical = 4.dp)
-          .testTag("insights_nav_boarding")
-      ) {
-        Box(
+        // 1. Live Location Tab (Inactive)
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
           modifier = Modifier
-            .size(46.dp)
-            .shadow(4.dp, CircleShape)
-            .background(
-              brush = Brush.verticalGradient(
-                colors = listOf(Color(0xFF560C17), Color(0xFF38050D))
-              ),
-              shape = CircleShape
-            ),
-          contentAlignment = Alignment.Center
+            .clickable {
+              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+              onNavigate(AppScreen.DASHBOARD)
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("insights_nav_live_location")
         ) {
           Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Boarding",
-            tint = Color.White,
+            imageVector = Icons.Default.LocationOn,
+            contentDescription = "Live Location",
+            tint = TextGrey,
             modifier = Modifier.size(24.dp)
           )
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Live Location",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextGrey
+          )
+          Spacer(modifier = Modifier.height(7.dp))
         }
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "Boarding",
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Medium,
-          color = TextGrey
-        )
-        Spacer(modifier = Modifier.height(7.dp))
-      }
 
-      // 3. Insights Tab (ACTIVE with red/maroon indicator line underneath)
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.testTag("insights_nav_insights_active")
-      ) {
-        Icon(
-          imageVector = Icons.Default.BarChart,
-          contentDescription = "Insights",
-          tint = MaroonPeak,
-          modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "Insights",
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Bold,
-          color = MaroonPeak
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        // Red/Maroon indicator pill underneath
-        Box(
+        // 2. Boarding Tab (Center button, inactive with circle)
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
           modifier = Modifier
-            .width(26.dp)
-            .height(3.dp)
-            .background(MaroonPeak, RoundedCornerShape(2.dp))
-        )
+            .clickable {
+              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+              onNavigate(AppScreen.PICKUP_FINDER)
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("insights_nav_boarding")
+        ) {
+          Box(
+            modifier = Modifier
+              .size(46.dp)
+              .shadow(4.dp, CircleShape)
+              .background(
+                brush = Brush.verticalGradient(
+                  colors = listOf(Color(0xFF560C17), Color(0xFF38050D))
+                ),
+                shape = CircleShape
+              ),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Person,
+              contentDescription = "Boarding",
+              tint = Color.White,
+              modifier = Modifier.size(24.dp)
+            )
+          }
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Boarding",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextGrey
+          )
+          Spacer(modifier = Modifier.height(7.dp))
+        }
+
+        // 3. Insights Tab (ACTIVE with red/maroon indicator line underneath)
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier.testTag("insights_nav_insights_active")
+        ) {
+          Icon(
+            imageVector = Icons.Default.BarChart,
+            contentDescription = "Insights",
+            tint = MaroonPeak,
+            modifier = Modifier.size(24.dp)
+          )
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Insights",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaroonPeak
+          )
+          Spacer(modifier = Modifier.height(4.dp))
+          // Red/Maroon indicator pill underneath
+          Box(
+            modifier = Modifier
+              .width(26.dp)
+              .height(3.dp)
+              .background(MaroonPeak, RoundedCornerShape(2.dp))
+          )
+        }
       }
     }
   }

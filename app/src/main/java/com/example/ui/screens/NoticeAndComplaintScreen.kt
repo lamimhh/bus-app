@@ -59,7 +59,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -121,19 +124,21 @@ fun NoticeAndComplaintScreen(
       .background(CreamBackground)
       .testTag("notice_board_screen")
   ) {
+    val view = LocalView.current
     Column(
       modifier = Modifier
         .fillMaxSize()
+        .statusBarsPadding()
         .padding(horizontal = 16.dp)
     ) {
-      Spacer(modifier = Modifier.height(8.dp))
+      Spacer(modifier = Modifier.height(2.dp))
 
       // 1. TOP HEADER (Back Button + SADA SHUNDORI Branding)
       Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
           .fillMaxWidth()
-          .padding(vertical = 8.dp)
+          .padding(vertical = 4.dp)
       ) {
         // Back Button
         Surface(
@@ -142,7 +147,10 @@ fun NoticeAndComplaintScreen(
           border = BorderStroke(1.dp, CardBorderColor),
           modifier = Modifier
             .size(38.dp)
-            .clickable { viewModel.navigateBack() }
+            .clickable {
+              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+              viewModel.navigateBack()
+            }
             .testTag("button_back_notice_board")
         ) {
           Box(contentAlignment = Alignment.Center) {

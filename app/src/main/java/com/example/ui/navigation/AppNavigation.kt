@@ -118,6 +118,7 @@ fun AppNavigation(
   Scaffold(
     modifier = modifier.fillMaxSize(),
     containerColor = SadaTheme.colors.background,
+    contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
     topBar = {
       if (showTopBar) {
         TopAppBar(

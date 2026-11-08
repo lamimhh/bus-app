@@ -70,7 +70,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -174,6 +177,7 @@ fun ComplaintBoxScreen(
     Column(
       modifier = Modifier
         .fillMaxSize()
+        .statusBarsPadding()
         .verticalScroll(scrollState)
         .padding(bottom = 36.dp)
     ) {
@@ -814,7 +818,7 @@ private fun TopHeaderBar(
     horizontalArrangement = Arrangement.SpaceBetween,
     modifier = Modifier
       .fillMaxWidth()
-      .padding(horizontal = 16.dp, vertical = 12.dp)
+      .padding(horizontal = 16.dp, vertical = 6.dp)
   ) {
     // Left: Bus Icon Emblem + Titles
     Row(
@@ -900,11 +904,15 @@ private fun TopHeaderBar(
 private fun BackToProfileButton(
   onClick: () -> Unit
 ) {
+  val view = LocalView.current
   Row(
     verticalAlignment = Alignment.CenterVertically,
     modifier = Modifier
-      .padding(horizontal = 16.dp, vertical = 6.dp)
-      .clickable { onClick() }
+      .padding(horizontal = 16.dp, vertical = 4.dp)
+      .clickable {
+        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        onClick()
+      }
       .testTag("button_back_to_profile")
   ) {
     Icon(
