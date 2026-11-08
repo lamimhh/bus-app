@@ -1,5 +1,6 @@
 package com.example.ui.util
 
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.foundation.clickable
@@ -11,30 +12,81 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 
 /**
- * Utility for triggering tactile haptic feedback (vibrations) on touch interactions.
+ * Standard tactile haptic feedback types for premium user interaction.
+ */
+enum class HapticType {
+  LIGHT,      // Subtle feedback for chips, toggles, list items, minor options
+  MEDIUM,     // Distinct tactile tap for navigation tabs, buttons, dialog triggers
+  STRONG,     // Firmer impact for important commitments, calls, submit actions
+  SUCCESS,    // Confirmation feedback on successful completion
+  ERROR       // Feedback on validation rejection or alert
+}
+
+/**
+ * Centralized, production-grade tactile haptic feedback utility.
+ * Gracefully handles device support, platform versions, and settings.
  */
 object HapticHelper {
-  fun trigger(view: View?, feedbackConstant: Int = HapticFeedbackConstants.VIRTUAL_KEY) {
-    view?.performHapticFeedback(feedbackConstant)
+
+  /**
+   * Triggers a native device haptic vibration on user interaction.
+   * Silently ignores calls if device vibrator or view is unavailable.
+   */
+  fun trigger(view: View?, type: HapticType = HapticType.LIGHT) {
+    if (view == null) return
+    try {
+      val feedbackConstant = when (type) {
+        HapticType.LIGHT -> {
+          HapticFeedbackConstants.KEYBOARD_TAP
+        }
+        HapticType.MEDIUM -> {
+          HapticFeedbackConstants.VIRTUAL_KEY
+        }
+        HapticType.STRONG -> {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            HapticFeedbackConstants.CONFIRM
+          } else {
+            HapticFeedbackConstants.VIRTUAL_KEY
+          }
+        }
+        HapticType.SUCCESS -> {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            HapticFeedbackConstants.CONFIRM
+          } else {
+            HapticFeedbackConstants.VIRTUAL_KEY
+          }
+        }
+        HapticType.ERROR -> {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            HapticFeedbackConstants.REJECT
+          } else {
+            HapticFeedbackConstants.LONG_PRESS
+          }
+        }
+      }
+      view.performHapticFeedback(feedbackConstant)
+    } catch (_: Throwable) {
+      // Graceful fallback: do not interrupt user operation
+    }
   }
 }
 
 /**
- * Extension on View to trigger haptic feedback cleanly.
+ * Convenient extension on View to trigger a haptic pulse cleanly.
  */
-fun View?.triggerHaptic(feedbackConstant: Int = HapticFeedbackConstants.VIRTUAL_KEY) {
-  this?.performHapticFeedback(feedbackConstant)
+fun View?.triggerHaptic(type: HapticType = HapticType.LIGHT) {
+  HapticHelper.trigger(this, type)
 }
 
 /**
- * Composable clickable modifier that automatically executes tactile haptic feedback on click.
+ * Composable clickable modifier that automatically produces tactile haptic feedback on genuine click.
  */
 @Composable
 fun Modifier.hapticClickable(
   enabled: Boolean = true,
   onClickLabel: String? = null,
   role: Role? = null,
-  feedbackConstant: Int = HapticFeedbackConstants.VIRTUAL_KEY,
+  hapticType: HapticType = HapticType.LIGHT,
   onClick: () -> Unit
 ): Modifier {
   val view = LocalView.current
@@ -43,7 +95,7 @@ fun Modifier.hapticClickable(
     onClickLabel = onClickLabel,
     role = role
   ) {
-    view.performHapticFeedback(feedbackConstant)
+    HapticHelper.trigger(view, hapticType)
     onClick()
   }
 }

@@ -103,7 +103,10 @@ import com.example.model.AppScreen
 import com.example.model.BusStatus
 import com.example.model.BusStop
 import com.example.model.UserProfile
+import com.example.ui.components.SadaBottomNavigation
 import com.example.ui.theme.SadaTheme
+import com.example.ui.util.HapticHelper
+import com.example.ui.util.HapticType
 import com.example.viewmodel.BusViewModel
 
 // Color Palette with seamless dual-theme (Light & Dark) adaptation
@@ -242,11 +245,10 @@ fun LiveDashboardScreen(
       }
     }
 
-    // 8. EXACT BOTTOM NAVIGATION BAR (Attached flush to bottom bounds)
-    DashboardBottomNavigation(
+    // 8. STANDARDIZED CENTRALIZED BOTTOM NAVIGATION BAR
+    SadaBottomNavigation(
       activeScreen = AppScreen.DASHBOARD,
       onNavigate = { screen -> viewModel.navigateTo(screen) },
-      onBoardingClick = { viewModel.navigateTo(AppScreen.PICKUP_FINDER) },
       modifier = Modifier.align(Alignment.BottomCenter)
     )
 
@@ -1563,138 +1565,6 @@ private fun ServiceUpdateCard(
           maxLines = 2,
           overflow = TextOverflow.Ellipsis
         )
-      }
-    }
-  }
-}
-
-// -------------------------------------------------------------------------------------------------
-// 8. EXACT BOTTOM NAVIGATION BAR
-// -------------------------------------------------------------------------------------------------
-@Composable
-private fun DashboardBottomNavigation(
-  activeScreen: AppScreen,
-  onNavigate: (AppScreen) -> Unit,
-  onBoardingClick: () -> Unit,
-  modifier: Modifier = Modifier
-) {
-  val view = LocalView.current
-  Surface(
-    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-    color = CardBg,
-    shadowElevation = 14.dp,
-    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    modifier = modifier.fillMaxWidth()
-  ) {
-    Column(
-      modifier = Modifier
-        .fillMaxWidth()
-        .navigationBarsPadding()
-    ) {
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 24.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        // 1. Live Location (Active item with red highlight and underline)
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier
-            .clickable {
-              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-              onNavigate(AppScreen.DASHBOARD)
-            }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .testTag("nav_live_location")
-        ) {
-          Icon(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "Live Location",
-            tint = RouteRemaining,
-            modifier = Modifier.size(24.dp)
-          )
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "Live Location",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = RouteRemaining
-          )
-          Spacer(modifier = Modifier.height(4.dp))
-          Box(
-            modifier = Modifier
-              .width(26.dp)
-              .height(3.dp)
-              .background(RouteRemaining, RoundedCornerShape(2.dp))
-          )
-        }
-
-        // 2. Elevated Center Boarding Button
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier
-            .clickable {
-              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-              onBoardingClick()
-            }
-            .testTag("nav_boarding_center")
-        ) {
-          Box(
-            modifier = Modifier
-              .size(46.dp)
-              .shadow(4.dp, CircleShape)
-              .background(
-                brush = Brush.verticalGradient(
-                  colors = listOf(Color(0xFF560C17), Color(0xFF38050D))
-                ),
-                shape = CircleShape
-              ),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Default.Person,
-              contentDescription = "Boarding",
-              tint = Color.White,
-              modifier = Modifier.size(24.dp)
-            )
-          }
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "Boarding",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = TextGrey
-          )
-        }
-
-        // 3. Insights
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier
-            .clickable {
-              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-              onNavigate(AppScreen.INSIGHTS)
-            }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .testTag("nav_insights")
-        ) {
-          Icon(
-            imageVector = Icons.Default.BarChart,
-            contentDescription = "Insights",
-            tint = TextGrey,
-            modifier = Modifier.size(24.dp)
-          )
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "Insights",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = TextGrey
-          )
-          Spacer(modifier = Modifier.height(7.dp))
-        }
       }
     }
   }

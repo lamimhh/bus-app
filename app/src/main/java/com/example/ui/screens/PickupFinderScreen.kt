@@ -116,7 +116,10 @@ import com.example.model.BusStatus
 import com.example.model.BusStop
 import com.example.model.CommunityChatMessage
 import com.example.model.UserProfile
+import com.example.ui.components.SadaBottomNavigation
 import com.example.ui.theme.SadaTheme
+import com.example.ui.util.HapticHelper
+import com.example.ui.util.HapticType
 import com.example.viewmodel.BusViewModel
 
 // Dynamic theme color getters matching Light & Luxury Dark Mode palettes
@@ -367,8 +370,8 @@ fun PickupFinderScreen(
       }
     }
 
-    // 12. BOTTOM NAVIGATION BAR (Attached flush to bottom bounds)
-    BoardingBottomNavigation(
+    // 12. STANDARDIZED CENTRALIZED BOTTOM NAVIGATION BAR
+    SadaBottomNavigation(
       activeScreen = AppScreen.BOARDING,
       onNavigate = { screen -> viewModel.navigateTo(screen) },
       modifier = Modifier.align(Alignment.BottomCenter)
@@ -2114,141 +2117,6 @@ private fun LiveCommunityChatCard(
 // -------------------------------------------------------------------------------------------------
 // 12. FLOATING BOTTOM NAVIGATION BAR (Live Location, Boarding [active], Insights)
 // -------------------------------------------------------------------------------------------------
-@Composable
-private fun BoardingBottomNavigation(
-  activeScreen: AppScreen,
-  onNavigate: (AppScreen) -> Unit,
-  modifier: Modifier = Modifier
-) {
-  val isDark = SadaTheme.isDark
-  val view = LocalView.current
-
-  Surface(
-    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-    color = CardBg,
-    shadowElevation = if (isDark) 16.dp else 14.dp,
-    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    modifier = modifier.fillMaxWidth()
-  ) {
-    Column(
-      modifier = Modifier
-        .fillMaxWidth()
-        .navigationBarsPadding()
-    ) {
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 24.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        // 1. Live Location Tab (Inactive)
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier
-            .clickable {
-              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-              onNavigate(AppScreen.DASHBOARD)
-            }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .testTag("boarding_nav_live_location")
-        ) {
-          Icon(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "Live Location",
-            tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
-            modifier = Modifier.size(24.dp)
-          )
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "Live Location",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isDark) Color(0xFF94A3B8) else TextGrey
-          )
-          Spacer(modifier = Modifier.height(7.dp))
-        }
-
-        // 2. Center Boarding Tab (ACTIVE - Red elevated button matching reference)
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier.testTag("boarding_nav_boarding_center")
-        ) {
-          Box(
-            modifier = Modifier
-              .size(48.dp)
-              .shadow(if (isDark) 8.dp else 4.dp, CircleShape)
-              .border(
-                width = if (isDark) 2.dp else 1.5.dp,
-                color = if (isDark) Color(0xFFDC2626).copy(alpha = 0.85f) else Color.White,
-                shape = CircleShape
-              )
-              .background(
-                brush = Brush.verticalGradient(
-                  colors = listOf(Color(0xFF7A1424), Color(0xFF4A0A14))
-                ),
-                shape = CircleShape
-              ),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Default.DirectionsBus,
-              contentDescription = "Boarding",
-              tint = Color.White,
-              modifier = Modifier.size(24.dp)
-            )
-          }
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "Boarding",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isDark) Color(0xFFF8FAFC) else RouteRemaining
-          )
-          Spacer(modifier = Modifier.height(4.dp))
-          // Red indicator pill underneath
-          Box(
-            modifier = Modifier
-              .width(26.dp)
-              .height(3.dp)
-              .background(
-                if (isDark) Color(0xFFDC2626) else RouteRemaining,
-                RoundedCornerShape(2.dp)
-              )
-          )
-        }
-
-        // 3. Insights Tab (Inactive)
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier
-            .clickable {
-              view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-              onNavigate(AppScreen.INSIGHTS)
-            }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .testTag("boarding_nav_insights")
-        ) {
-          Icon(
-            imageVector = Icons.Default.BarChart,
-            contentDescription = "Insights",
-            tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
-            modifier = Modifier.size(24.dp)
-          )
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "Insights",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isDark) Color(0xFF94A3B8) else TextGrey
-          )
-          Spacer(modifier = Modifier.height(7.dp))
-        }
-      }
-    }
-  }
-}
-
 // -------------------------------------------------------------------------------------------------
 // 360 PANORAMA INTERACTIVE PREVIEW DIALOG
 // -------------------------------------------------------------------------------------------------
