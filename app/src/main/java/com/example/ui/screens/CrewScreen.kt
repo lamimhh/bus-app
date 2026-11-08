@@ -58,21 +58,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Color palette matching the reference design
-private val CreamBackground = Color(0xFFFAF7F2)
-private val DeepMaroon = Color(0xFF4A0E17)
-private val DeepMaroonDark = Color(0xFF2C080E)
-private val RichWine = Color(0xFF3B0A12)
-private val CardBorderColor = Color(0xFFEADBCE)
-private val GoldAccent = Color(0xFFC59B27)
-private val GoldBadgeBg = Color(0xFFFFF9E6)
-private val GoldBorder = Color(0xFFE2C475)
-private val SoftBlushCircle = Color(0xFFFBECEE)
-private val TextMain = Color(0xFF1E1E1E)
-private val TextSub = Color(0xFF555555)
-private val TextMuted = Color(0xFF757575)
+// Color palette dynamically adapting to active theme (Light & Dark)
+private val CreamBackground: Color @Composable get() = SadaTheme.colors.background
+private val DeepMaroon: Color @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF4A0E17)
+private val DeepMaroonDark: Color @Composable get() = SadaTheme.colors.headerText
+private val RichWine: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF180A0E) else Color(0xFF3B0A12)
+private val CardBorderColor: Color @Composable get() = SadaTheme.colors.cardBorder
+private val GoldAccent: Color @Composable get() = SadaTheme.colors.accentGold
+private val GoldBadgeBg: Color @Composable get() = SadaTheme.colors.goldBadgeBg
+private val GoldBorder: Color @Composable get() = SadaTheme.colors.goldBorder
+private val SoftBlushCircle: Color @Composable get() = SadaTheme.colors.softPillBg
+private val TextMain: Color @Composable get() = SadaTheme.colors.textPrimary
+private val TextSub: Color @Composable get() = SadaTheme.colors.textSecondary
+private val TextMuted: Color @Composable get() = SadaTheme.colors.textMuted
+private val CardBg: Color @Composable get() = SadaTheme.colors.cardBackground
 
 @Composable
 fun CrewScreen(
@@ -111,7 +113,7 @@ fun CrewScreen(
         // Back Button
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color.White,
+          color = CardBg,
           border = BorderStroke(1.dp, CardBorderColor),
           modifier = Modifier
             .size(38.dp)
@@ -291,7 +293,7 @@ private fun CrewMemberCard(
 ) {
   Card(
     shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = BorderStroke(1.dp, CardBorderColor),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = Modifier.fillMaxWidth()
@@ -310,7 +312,7 @@ private fun CrewMemberCard(
         // Outer glow & double border
         Surface(
           shape = CircleShape,
-          color = Color.White,
+          color = CardBg,
           border = BorderStroke(3.dp, DeepMaroon),
           modifier = Modifier
             .size(142.dp)
@@ -534,7 +536,7 @@ private fun RouteConnector() {
 
     Surface(
       shape = CircleShape,
-      color = Color.White,
+      color = CardBg,
       border = BorderStroke(2.dp, GoldAccent),
       modifier = Modifier.size(24.dp)
     ) {

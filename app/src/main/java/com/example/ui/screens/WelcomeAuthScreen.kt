@@ -83,19 +83,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Light / Cream Aesthetic Palette matching reference design
-private val CreamBackground = Color(0xFFF9F6F0)
-private val CreamCard = Color(0xFFFFFFFF)
-private val MaroonHeading = Color(0xFF4A0E17)
-private val MaroonDeepButton = Color(0xFF4A0A12)
-private val MaroonGlow = Color(0xFFDC2626)
-private val GoldAccent = Color(0xFFC89B53)
-private val TextMutedBrown = Color(0xFF786F66)
-private val BorderWarm = Color(0xFFE2D9CC)
-private val TextDark = Color(0xFF2C241D)
-private val ErrorRed = Color(0xFFDC2626)
+// Palette with seamless dual-theme (Light & Dark) adaptation
+private val CreamBackground: Color @Composable get() = SadaTheme.colors.background
+private val CreamCard: Color @Composable get() = SadaTheme.colors.cardBackground
+private val MaroonHeading: Color @Composable get() = SadaTheme.colors.headerText
+private val MaroonDeepButton: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF6B1120) else Color(0xFF4A0A12)
+private val MaroonGlow: Color @Composable get() = SadaTheme.colors.maroonPrimary
+private val GoldAccent: Color @Composable get() = SadaTheme.colors.accentGold
+private val TextMutedBrown: Color @Composable get() = SadaTheme.colors.textSecondary
+private val BorderWarm: Color @Composable get() = SadaTheme.colors.cardBorder
+private val TextDark: Color @Composable get() = SadaTheme.colors.textPrimary
+private val ErrorRed: Color @Composable get() = Color(0xFFDC2626)
 
 @Composable
 fun WelcomeAuthScreen(

@@ -70,20 +70,36 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.model.AppScreen
 import com.example.model.Notice
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Color palette matching the reference design (6.jpeg)
-private val CreamBackground = Color(0xFFFAF7F2)
-private val DeepMaroon = Color(0xFF4A0E17)
-private val DeepMaroonDark = Color(0xFF2C080E)
-private val SoftBlushCircle = Color(0xFFFBECEE)
-private val CardBorderColor = Color(0xFFEADBCE)
-private val GoldBorderColor = Color(0xFFD4AF37)
-private val GoldBadgeBg = Color(0xFFFFF9E6)
-private val GoldAccent = Color(0xFFB8860B)
-private val TextMain = Color(0xFF1E1E1E)
-private val TextSub = Color(0xFF555555)
-private val TextMutedDate = Color(0xFF757575)
+// Color palette dynamically matching Light and Luxury Dark mode
+private val CreamBackground: Color
+  @Composable get() = SadaTheme.colors.background
+private val DeepMaroon: Color
+  @Composable get() = SadaTheme.colors.maroonDeep
+private val DeepMaroonDark: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF1E0A0E) else Color(0xFF2C080E)
+private val SoftBlushCircle: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF260D14) else Color(0xFFFBECEE)
+private val CardBorderColor: Color
+  @Composable get() = SadaTheme.colors.cardBorder
+private val GoldBorderColor: Color
+  @Composable get() = SadaTheme.colors.goldBorder
+private val GoldBadgeBg: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF2A1C0A) else Color(0xFFFFF9E6)
+private val GoldAccent: Color
+  @Composable get() = SadaTheme.colors.accentGold
+private val TextMain: Color
+  @Composable get() = SadaTheme.colors.textPrimary
+private val TextSub: Color
+  @Composable get() = SadaTheme.colors.textSecondary
+private val TextMutedDate: Color
+  @Composable get() = SadaTheme.colors.textMuted
+private val CardBg: Color
+  @Composable get() = SadaTheme.colors.cardBackground
+private val SurfaceBg: Color
+  @Composable get() = SadaTheme.colors.cardSurface
 
 @Composable
 fun NoticeAndComplaintScreen(
@@ -122,7 +138,7 @@ fun NoticeAndComplaintScreen(
         // Back Button
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color.White,
+          color = CardBg,
           border = BorderStroke(1.dp, CardBorderColor),
           modifier = Modifier
             .size(38.dp)
@@ -343,18 +359,21 @@ private fun NoticeItemCard(
   onClick: () -> Unit
 ) {
   val isPinned = notice.isPinned
+  val isDark = SadaTheme.isDark
 
   Card(
     shape = RoundedCornerShape(16.dp),
     colors = CardDefaults.cardColors(
-      containerColor = if (isPinned) Color(0xFFFFFDF8) else Color.White
+      containerColor = if (isPinned) {
+        if (isDark) Color(0xFF221318) else Color(0xFFFFFDF8)
+      } else CardBg
     ),
     border = if (isPinned) {
       BorderStroke(1.5.dp, GoldBorderColor)
     } else {
       BorderStroke(1.dp, CardBorderColor)
     },
-    elevation = CardDefaults.cardElevation(defaultElevation = if (isPinned) 2.dp else 1.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isPinned) (if (isDark) 4.dp else 2.dp) else 1.dp),
     modifier = Modifier
       .fillMaxWidth()
       .clickable { onClick() }
@@ -480,7 +499,7 @@ private fun NoticeDocumentModal(
   ) {
     Card(
       shape = RoundedCornerShape(22.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
+      colors = CardDefaults.cardColors(containerColor = CardBg),
       border = BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier
         .fillMaxWidth(0.92f)
@@ -501,7 +520,7 @@ private fun NoticeDocumentModal(
             Surface(
               shape = RoundedCornerShape(6.dp),
               color = if (notice.isPinned) GoldBadgeBg else SoftBlushCircle,
-              border = BorderStroke(0.8.dp, if (notice.isPinned) GoldBorderColor else Color(0xFFF0D5D8))
+              border = BorderStroke(0.8.dp, if (notice.isPinned) GoldBorderColor else (if (SadaTheme.isDark) Color(0xFF331119) else Color(0xFFF0D5D8)))
             ) {
               Text(
                 text = notice.category.uppercase(),

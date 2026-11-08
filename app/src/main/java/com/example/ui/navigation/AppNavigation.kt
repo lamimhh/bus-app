@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.model.AppScreen
+import com.example.ui.screens.AestheticSplashScreen
 import com.example.ui.screens.BrandSplashScreen
 import com.example.ui.screens.CommunityScreen
 import com.example.ui.screens.ComplaintBoxScreen
@@ -72,21 +73,24 @@ import com.example.ui.theme.MaroonPrimary
 import com.example.ui.theme.OutlineDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.TextMuted
+import com.example.ui.theme.SadaTheme
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.viewmodel.BusViewModel
+import com.example.viewmodel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(
   viewModel: BusViewModel,
+  themeViewModel: ThemeViewModel? = null,
   modifier: Modifier = Modifier
 ) {
   val currentScreen by viewModel.currentScreen.collectAsState()
   val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
   // Handle system back navigation
-  BackHandler(enabled = currentScreen != AppScreen.DASHBOARD && isLoggedIn) {
+  BackHandler(enabled = currentScreen != AppScreen.DASHBOARD && currentScreen != AppScreen.SPLASH && isLoggedIn) {
     if (currentScreen in listOf(AppScreen.COMPLAINT_BOX, AppScreen.COMMUNITY)) {
       viewModel.navigateTo(AppScreen.PROFILE)
     } else {
@@ -98,6 +102,7 @@ fun AppNavigation(
   val showBottomBar = false
 
   val showTopBar = currentScreen !in listOf(
+    AppScreen.SPLASH,
     AppScreen.WELCOME,
     AppScreen.DASHBOARD,
     AppScreen.PICKUP_FINDER,
@@ -112,7 +117,7 @@ fun AppNavigation(
 
   Scaffold(
     modifier = modifier.fillMaxSize(),
-    containerColor = if (currentScreen in listOf(AppScreen.DASHBOARD, AppScreen.PICKUP_FINDER, AppScreen.BOARDING, AppScreen.INSIGHTS, AppScreen.PROFILE, AppScreen.COMPLAINT_BOX, AppScreen.NOTICES, AppScreen.CREW, AppScreen.COMMUNITY)) Color(0xFFFAF7F2) else BackgroundDark,
+    containerColor = SadaTheme.colors.background,
     topBar = {
       if (showTopBar) {
         TopAppBar(
@@ -302,12 +307,20 @@ fun AppNavigation(
         .padding(innerPadding)
     ) { screen ->
       when (screen) {
+        AppScreen.SPLASH -> AestheticSplashScreen(
+          onSplashComplete = {
+            viewModel.navigateTo(if (isLoggedIn) AppScreen.DASHBOARD else AppScreen.WELCOME)
+          }
+        )
         AppScreen.WELCOME -> WelcomeAuthScreen(viewModel = viewModel)
         AppScreen.DASHBOARD -> LiveDashboardScreen(viewModel = viewModel)
         AppScreen.PICKUP_FINDER, AppScreen.BOARDING -> PickupFinderScreen(viewModel = viewModel)
         AppScreen.INSIGHTS -> InsightsScreen(viewModel = viewModel)
         AppScreen.NOTICES -> NoticeAndComplaintScreen(viewModel = viewModel)
-        AppScreen.PROFILE -> ProfileScreen(viewModel = viewModel)
+        AppScreen.PROFILE -> ProfileScreen(
+          viewModel = viewModel,
+          themeViewModel = themeViewModel
+        )
         AppScreen.CREW -> CrewScreen(
           viewModel = viewModel,
           onBackClick = { viewModel.navigateBack() }

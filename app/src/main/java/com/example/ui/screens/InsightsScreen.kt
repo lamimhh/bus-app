@@ -75,22 +75,25 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.model.AppScreen
 import com.example.model.UserProfile
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Color palette matching 4_cd522351.jpeg
-private val ScreenBg = Color(0xFFFAF7F2)
-private val ScreenBgEnd = Color(0xFFF3ECE4)
-private val MaroonDeep = Color(0xFF4A0A12)
-private val MaroonPeak = Color(0xFF7E0E1C)
-private val RoseBar = Color(0xFFD67D78)
-private val RoseBarSelected = Color(0xFFC46A65)
-private val CardBorderColor = Color(0xFFEDE4DC)
-private val TextDark = Color(0xFF1F1618)
-private val TextGrey = Color(0xFF7A686D)
-private val TextMutedLight = Color(0xFF9E8E92)
-private val GuidelineColor = Color(0xFFECE3DC)
-private val BadgeBg = Color(0xFFF8EBEB)
-private val NoticeBg = Color(0xFFF6EFE8)
+// Color palette matching 4_cd522351.jpeg with dual-theme adaptation
+private val ScreenBg: Color @Composable get() = SadaTheme.colors.background
+private val ScreenBgEnd: Color @Composable get() = SadaTheme.colors.backgroundEnd
+private val MaroonDeep: Color @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF4A0A12)
+private val MaroonPeak: Color @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF7E0E1C)
+private val RoseBar: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF881324) else Color(0xFFD67D78)
+private val RoseBarSelected: Color @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFFC46A65)
+private val CardBorderColor: Color @Composable get() = SadaTheme.colors.cardBorder
+private val TextDark: Color @Composable get() = SadaTheme.colors.textPrimary
+private val TextGrey: Color @Composable get() = SadaTheme.colors.textSecondary
+private val TextMutedLight: Color @Composable get() = SadaTheme.colors.textMuted
+private val GuidelineColor: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF260D13) else Color(0xFFECE3DC)
+private val BadgeBg: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF260D13) else Color(0xFFF8EBEB)
+private val NoticeBg: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF1E0C12) else Color(0xFFF6EFE8)
+private val CardBg: Color @Composable get() = SadaTheme.colors.cardBackground
+private val SurfaceBg: Color @Composable get() = SadaTheme.colors.cardSurface
 
 data class DayDelayItem(
   val day: String,
@@ -246,7 +249,7 @@ fun InsightsScreen(
             Text("Got it", color = MaroonDeep, fontWeight = FontWeight.Bold)
           }
         },
-        containerColor = Color.White,
+        containerColor = CardBg,
         shape = RoundedCornerShape(20.dp)
       )
     }
@@ -314,7 +317,7 @@ private fun InsightsHeader(
     // Right: Profile Avatar Capsule
     Surface(
       shape = RoundedCornerShape(20.dp),
-      color = Color.White,
+      color = CardBg,
       shadowElevation = 2.dp,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier
@@ -369,7 +372,7 @@ private fun DelayHistoryCard(
 
   Card(
     shape = RoundedCornerShape(24.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = modifier
@@ -681,6 +684,7 @@ private fun DelayBarChart(
             .weight(1f)
             .height(160.dp)
         ) {
+          val guideCol = GuidelineColor
           // Horizontal guideline lines
           Canvas(modifier = Modifier.fillMaxSize()) {
             val steps = 4 // 120, 90, 60, 30, 0
@@ -688,7 +692,7 @@ private fun DelayBarChart(
             for (i in 0..steps) {
               val y = i * rowHeight
               drawLine(
-                color = GuidelineColor,
+                color = guideCol,
                 start = Offset(0f, y),
                 end = Offset(size.width, y),
                 strokeWidth = 1.dp.toPx(),
@@ -793,7 +797,7 @@ private fun JourneyDetailsCard(
 
   Card(
     shape = RoundedCornerShape(24.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = modifier
@@ -969,7 +973,7 @@ private fun RealTimeNoticeCard(modifier: Modifier = Modifier) {
     ) {
       Surface(
         shape = CircleShape,
-        color = Color.White,
+        color = CardBg,
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
         modifier = Modifier.size(32.dp)
       ) {
@@ -1005,7 +1009,7 @@ private fun BottleneckCorridorCard(
 ) {
   Card(
     shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = modifier
@@ -1114,7 +1118,7 @@ private fun InsightsBottomNavigation(
 ) {
   Surface(
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-    color = Color.White,
+    color = CardBg,
     shadowElevation = 12.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier.fillMaxWidth()

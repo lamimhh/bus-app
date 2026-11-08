@@ -81,21 +81,38 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.R
 import com.example.model.AppScreen
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Dedicated luxury color palette matching reference design
-private val CreamBackground = Color(0xFFFAF7F2)
-private val DeepMaroon = Color(0xFF4A0E17)
-private val DeepMaroonDark = Color(0xFF38080F)
-private val SoftBlushCircle = Color(0xFFFBECEE)
-private val BorderSoft = Color(0xFFEADFD3)
-private val InputBorderColor = Color(0xFFDDD6CE)
-private val BannerBackground = Color(0xFFF7ECE6)
-private val BannerBorder = Color(0xFFE8D7CE)
-private val TaglineColor = Color(0xFF7A202A)
-private val DarkText = Color(0xFF1E1E1E)
-private val SubtitleText = Color(0xFF555555)
-private val MutedNoteText = Color(0xFF757575)
+// Dedicated luxury color palette matching reference design in both Light & Dark modes
+private val CreamBackground: Color
+  @Composable get() = SadaTheme.colors.background
+private val DeepMaroon: Color
+  @Composable get() = SadaTheme.colors.maroonDeep
+private val DeepMaroonDark: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF1E0A0E) else Color(0xFF38080F)
+private val SoftBlushCircle: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF260D14) else Color(0xFFFBECEE)
+private val BorderSoft: Color
+  @Composable get() = SadaTheme.colors.cardBorder
+private val InputBorderColor: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF3D161F) else Color(0xFFDDD6CE)
+private val BannerBackground: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF1E0D12) else Color(0xFFF7ECE6)
+private val BannerBorder: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF331119) else Color(0xFFE8D7CE)
+private val TaglineColor: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF7A202A)
+private val DarkText: Color
+  @Composable get() = SadaTheme.colors.textPrimary
+private val SubtitleText: Color
+  @Composable get() = SadaTheme.colors.textSecondary
+private val MutedNoteText: Color
+  @Composable get() = SadaTheme.colors.textMuted
+private val CardBg: Color
+  @Composable get() = SadaTheme.colors.cardBackground
+private val SurfaceBg: Color
+  @Composable get() = SadaTheme.colors.cardSurface
 
 private val complaintCategories = listOf(
   "Bus Timing & Punctuality",
@@ -177,12 +194,12 @@ fun ComplaintBoxScreen(
 
       Spacer(modifier = Modifier.height(20.dp))
 
-      // 4. MAIN FORM CARD (White rounded container)
+      // 4. MAIN FORM CARD (Rounded container)
       Card(
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
         border = BorderStroke(1.dp, BorderSoft),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (SadaTheme.isDark) 4.dp else 2.dp),
         modifier = Modifier
           .fillMaxWidth()
           .padding(horizontal = 16.dp)
@@ -306,21 +323,21 @@ fun ComplaintBoxScreen(
                   color = if (showValidationErrors && selectedCategory.isBlank()) Color(0xFFB00020) else InputBorderColor,
                   shape = RoundedCornerShape(10.dp)
                 )
-                .background(Color.White, RoundedCornerShape(10.dp))
+                .background(SurfaceBg, RoundedCornerShape(10.dp))
                 .clickable { isCategoryDropdownOpen = true }
                 .padding(horizontal = 14.dp, vertical = 15.dp)
                 .testTag("dropdown_complaint_category")
             ) {
               Text(
                 text = if (selectedCategory.isBlank()) "Choose a category" else selectedCategory,
-                color = if (selectedCategory.isBlank()) Color(0xFF9E9E9E) else DarkText,
+                color = if (selectedCategory.isBlank()) MutedNoteText else DarkText,
                 fontSize = 13.5.sp,
                 modifier = Modifier.weight(1f)
               )
               Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = "Select Category",
-                tint = Color(0xFF666666)
+                tint = SubtitleText
               )
             }
 
@@ -328,7 +345,7 @@ fun ComplaintBoxScreen(
               expanded = isCategoryDropdownOpen,
               onDismissRequest = { isCategoryDropdownOpen = false },
               modifier = Modifier
-                .background(Color.White)
+                .background(CardBg)
                 .border(1.dp, BorderSoft, RoundedCornerShape(8.dp))
             ) {
               complaintCategories.forEach { category ->
@@ -619,8 +636,9 @@ fun ComplaintBoxScreen(
     Dialog(onDismissRequest = { /* Require action button click */ }) {
       Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
         border = BorderStroke(1.dp, BorderSoft),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (SadaTheme.isDark) 4.dp else 2.dp),
         modifier = Modifier
           .fillMaxWidth()
           .padding(16.dp)
@@ -851,8 +869,8 @@ private fun TopHeaderBar(
     // Right: Menu Button
     Surface(
       shape = RoundedCornerShape(10.dp),
-      border = BorderStroke(1.dp, Color(0xFFE2D6CB)),
-      color = Color.White,
+      border = BorderStroke(1.dp, BorderSoft),
+      color = CardBg,
       modifier = Modifier
         .clickable { onMenuClick() }
         .testTag("button_header_menu")
@@ -864,14 +882,14 @@ private fun TopHeaderBar(
         Icon(
           imageVector = Icons.Default.Menu,
           contentDescription = "Menu",
-          tint = Color(0xFF222222),
+          tint = DarkText,
           modifier = Modifier.size(19.dp)
         )
         Text(
           text = "Menu",
           fontSize = 9.sp,
           fontWeight = FontWeight.SemiBold,
-          color = Color(0xFF333333)
+          color = SubtitleText
         )
       }
     }
@@ -1002,10 +1020,10 @@ private fun ValidationErrorText(message: String) {
 
 @Composable
 private fun outlinedFieldColors() = OutlinedTextFieldDefaults.colors(
-  focusedContainerColor = Color.White,
-  unfocusedContainerColor = Color.White,
-  disabledContainerColor = Color(0xFFF9F9F9),
-  focusedBorderColor = DeepMaroon,
+  focusedContainerColor = SurfaceBg,
+  unfocusedContainerColor = SurfaceBg,
+  disabledContainerColor = SurfaceBg,
+  focusedBorderColor = if (SadaTheme.isDark) Color(0xFFEF4444) else DeepMaroon,
   unfocusedBorderColor = InputBorderColor,
   errorBorderColor = Color(0xFFB00020),
   focusedTextColor = DarkText,

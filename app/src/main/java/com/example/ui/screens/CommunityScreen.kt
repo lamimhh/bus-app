@@ -54,20 +54,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Color palette matching the reference design (10_3475f3ae.jpeg)
-private val CreamBackground = Color(0xFFFAF7F2)
-private val DeepMaroon = Color(0xFF4A0E17)
-private val DeepMaroonDark = Color(0xFF2C080E)
-private val CardBorderColor = Color(0xFFEADBCE)
-private val GoldAccent = Color(0xFFC59B27)
-private val GoldBorder = Color(0xFFE2C475)
-private val GoldCornerBracket = Color(0xFFC8A878)
-private val GoldLabel = Color(0xFFB09060)
-private val TextMain = Color(0xFF1E1E1E)
-private val TextSub = Color(0xFF555555)
-private val TextMuted = Color(0xFF757575)
+// Color palette matching the reference design with dual-theme adaptation
+private val CreamBackground: Color @Composable get() = SadaTheme.colors.background
+private val DeepMaroon: Color @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF4A0E17)
+private val DeepMaroonDark: Color @Composable get() = SadaTheme.colors.headerText
+private val CardBorderColor: Color @Composable get() = SadaTheme.colors.cardBorder
+private val GoldAccent: Color @Composable get() = SadaTheme.colors.accentGold
+private val GoldBorder: Color @Composable get() = SadaTheme.colors.goldBorder
+private val GoldCornerBracket: Color @Composable get() = SadaTheme.colors.accentGold
+private val GoldLabel: Color @Composable get() = SadaTheme.colors.accentGold
+private val TextMain: Color @Composable get() = SadaTheme.colors.textPrimary
+private val TextSub: Color @Composable get() = SadaTheme.colors.textSecondary
+private val TextMuted: Color @Composable get() = SadaTheme.colors.textMuted
+private val CardBg: Color @Composable get() = SadaTheme.colors.cardBackground
+private val SurfaceBg: Color @Composable get() = SadaTheme.colors.cardSurface
 
 private const val URL_MESSENGER = "https://m.me/cm/4pkb_W-NP7Cd3sWD/?send_source=cm%3Acopy_invite_link"
 private const val URL_FACEBOOK = "https://www.facebook.com/share/g/1EjspKMeok/"
@@ -110,7 +113,7 @@ fun CommunityScreen(
         // Back Button
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color.White,
+          color = CardBg,
           border = BorderStroke(1.dp, CardBorderColor),
           modifier = Modifier
             .size(38.dp)
@@ -392,7 +395,7 @@ private fun CommunityInteractiveCard(
 ) {
   Card(
     shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = BorderStroke(1.dp, CardBorderColor),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = Modifier
@@ -411,7 +414,7 @@ private fun CommunityInteractiveCard(
       ) {
         Surface(
           shape = RoundedCornerShape(16.dp),
-          color = Color.White,
+          color = SurfaceBg,
           border = BorderStroke(1.dp, CardBorderColor.copy(alpha = 0.8f)),
           shadowElevation = 3.dp,
           modifier = Modifier.size(66.dp)

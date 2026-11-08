@@ -101,22 +101,25 @@ import com.example.model.AppScreen
 import com.example.model.BusStatus
 import com.example.model.BusStop
 import com.example.model.UserProfile
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Color Palette strictly matching 2_131a6d51.jpeg
-private val DashboardBg = Color(0xFFF9F6F0)       // Warm ivory background
-private val DashboardBgEnd = Color(0xFFF4EEE6)    // Subtle ivory shade
-private val BurgundyDark = Color(0xFF28050B)      // Deepest burgundy for monitor
-private val BurgundyMid = Color(0xFF4C0A15)       // Monitor gradient mid
-private val BurgundyLight = Color(0xFF6B1120)     // Accent burgundy
-private val CrimsonAccent = Color(0xFFE53935)     // Bright red >> chevrons & live dot
-private val BurgundyText = Color(0xFF38060F)      // Header serif & title text
-private val TextDark = Color(0xFF1F1618)          // Primary card text
-private val TextGrey = Color(0xFF7A686D)          // Subtitle and label grey
-private val CardBorderColor = Color(0xFFEDE4DC)   // Subtle warm border
-private val RouteGreen = Color(0xFF10B981)        // Completed route green
-private val RouteRemaining = Color(0xFF7E0E1C)    // Remaining route burgundy
-private val RiverColor = Color(0xFFC7E2F2)        // Subtle river on map
+// Color Palette with seamless dual-theme (Light & Dark) adaptation
+private val DashboardBg: Color @Composable get() = SadaTheme.colors.background
+private val DashboardBgEnd: Color @Composable get() = SadaTheme.colors.backgroundEnd
+private val BurgundyDark: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF15090D) else Color(0xFF28050B)
+private val BurgundyMid: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF200B13) else Color(0xFF4C0A15)
+private val BurgundyLight: Color @Composable get() = if (SadaTheme.isDark) Color(0xFF331119) else Color(0xFF6B1120)
+private val CrimsonAccent: Color @Composable get() = SadaTheme.colors.maroonPrimary
+private val BurgundyText: Color @Composable get() = SadaTheme.colors.headerText
+private val TextDark: Color @Composable get() = SadaTheme.colors.textPrimary
+private val TextGrey: Color @Composable get() = SadaTheme.colors.textSecondary
+private val CardBorderColor: Color @Composable get() = SadaTheme.colors.cardBorder
+private val RouteGreen: Color @Composable get() = Color(0xFF10B981)
+private val RouteRemaining: Color @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF7E0E1C)
+private val RiverColor: Color @Composable get() = if (SadaTheme.isDark) SadaTheme.colors.mapWater else Color(0xFFC7E2F2)
+private val CardBg: Color @Composable get() = SadaTheme.colors.cardBackground
+private val SurfaceBg: Color @Composable get() = SadaTheme.colors.cardSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -370,7 +373,7 @@ private fun DashboardHeader(
     Surface(
       onClick = onProfileClick,
       shape = RoundedCornerShape(22.dp),
-      color = Color.White,
+      color = CardBg,
       shadowElevation = 2.dp,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier
@@ -613,6 +616,7 @@ private fun HorizontalRouteTrack(
   pulseAlpha: Float,
   modifier: Modifier = Modifier
 ) {
+  val crimson = CrimsonAccent
   Canvas(
     modifier = modifier
       .fillMaxWidth()
@@ -632,7 +636,7 @@ private fun HorizontalRouteTrack(
 
     // Completed segment up to center
     drawLine(
-      color = CrimsonAccent,
+      color = crimson,
       start = Offset(10f, centerY),
       end = Offset(size.width * 0.5f, centerY),
       strokeWidth = strokeWidth,
@@ -647,12 +651,12 @@ private fun HorizontalRouteTrack(
       if (index == 2) {
         // Current Stop Node (Center - glowing double ring)
         drawCircle(
-          color = CrimsonAccent.copy(alpha = 0.4f * pulseAlpha),
+          color = crimson.copy(alpha = 0.4f * pulseAlpha),
           radius = 9.dp.toPx(),
           center = Offset(x, centerY)
         )
         drawCircle(
-          color = CrimsonAccent,
+          color = crimson,
           radius = 5.dp.toPx(),
           center = Offset(x, centerY)
         )
@@ -664,7 +668,7 @@ private fun HorizontalRouteTrack(
       } else if (index < 2) {
         // Passed stops (solid small pink/white nodes)
         drawCircle(
-          color = CrimsonAccent,
+          color = crimson,
           radius = 3.dp.toPx(),
           center = Offset(x, centerY)
         )
@@ -866,7 +870,7 @@ private fun MetricCard(
 ) {
   Surface(
     shape = RoundedCornerShape(18.dp),
-    color = Color.White,
+    color = CardBg,
     shadowElevation = 2.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier.height(112.dp)
@@ -880,6 +884,7 @@ private fun CircularJourneyArc(
   percentage: Int,
   modifier: Modifier = Modifier
 ) {
+  val routeRemainCol = RouteRemaining
   Canvas(modifier = modifier.size(54.dp)) {
     val strokeWidth = 5.5.dp.toPx()
     val diameter = size.minDimension - strokeWidth
@@ -899,7 +904,7 @@ private fun CircularJourneyArc(
 
     // Progress Arc in deep burgundy
     drawArc(
-      color = RouteRemaining,
+      color = routeRemainCol,
       startAngle = 135f,
       sweepAngle = sweepPct,
       useCenter = false,
@@ -924,9 +929,16 @@ private fun InteractiveMapCard(
   onBusClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+  val mapCanvasBg = if (isDark) SadaTheme.colors.mapBackground else Color(0xFFF3EFE9)
+  val gridColor = if (isDark) SadaTheme.colors.mapRoad else Color(0xFFE8E2D9)
+  val riverCol = RiverColor
+  val routeGreenCol = RouteGreen
+  val routeRemainCol = RouteRemaining
+
   Surface(
     shape = RoundedCornerShape(22.dp),
-    color = Color.White,
+    color = CardBg,
     shadowElevation = 3.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier
@@ -945,10 +957,10 @@ private fun InteractiveMapCard(
         val h = size.height
 
         // Neutral map base background
-        drawRect(color = Color(0xFFF3EFE9))
+        drawRect(color = mapCanvasBg)
 
-        // Simulated road grid lines (subtle white tracks)
-        val gridPaint = Color(0xFFE8E2D9)
+        // Simulated road grid lines (subtle tracks)
+        val gridPaint = gridColor
         drawLine(gridPaint, Offset(0f, h * 0.25f), Offset(w, h * 0.25f), strokeWidth = 12f)
         drawLine(gridPaint, Offset(0f, h * 0.65f), Offset(w, h * 0.65f), strokeWidth = 16f)
         drawLine(gridPaint, Offset(w * 0.22f, 0f), Offset(w * 0.22f, h), strokeWidth = 10f)
@@ -962,7 +974,7 @@ private fun InteractiveMapCard(
         }
         drawPath(
           path = riverPath,
-          color = RiverColor,
+          color = riverCol,
           style = Stroke(width = 16f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
@@ -980,7 +992,7 @@ private fun InteractiveMapCard(
         }
         drawPath(
           path = completedPath,
-          color = RouteGreen,
+          color = routeGreenCol,
           style = Stroke(width = 5.dp.toPx() * zoomLevel, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
@@ -992,27 +1004,27 @@ private fun InteractiveMapCard(
         }
         drawPath(
           path = remainingPath,
-          color = RouteRemaining,
+          color = routeRemainCol,
           style = Stroke(width = 5.dp.toPx() * zoomLevel, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
         // Draw stop markers
         // Stop: Gazipura 27
         drawCircle(color = Color.White, radius = 5.dp.toPx(), center = pGazipura)
-        drawCircle(color = RouteGreen, radius = 5.dp.toPx(), center = pGazipura, style = Stroke(2.5.dp.toPx()))
+        drawCircle(color = routeGreenCol, radius = 5.dp.toPx(), center = pGazipura, style = Stroke(2.5.dp.toPx()))
 
         // Stop: Abdullahpur
         drawCircle(color = Color.White, radius = 5.dp.toPx(), center = pAbdullahpur)
-        drawCircle(color = RouteRemaining, radius = 5.dp.toPx(), center = pAbdullahpur, style = Stroke(2.5.dp.toPx()))
+        drawCircle(color = routeRemainCol, radius = 5.dp.toPx(), center = pAbdullahpur, style = Stroke(2.5.dp.toPx()))
 
         // Current Bus Marker at Tongi (large circle with pulse)
         drawCircle(
-          color = RouteRemaining.copy(alpha = 0.22f),
+          color = routeRemainCol.copy(alpha = 0.22f),
           radius = 18.dp.toPx(),
           center = pTongi
         )
         drawCircle(
-          color = RouteRemaining,
+          color = routeRemainCol,
           radius = 11.dp.toPx(),
           center = pTongi
         )
@@ -1022,7 +1034,7 @@ private fun InteractiveMapCard(
           center = pTongi
         )
         drawCircle(
-          color = RouteRemaining,
+          color = routeRemainCol,
           radius = 7.dp.toPx(),
           center = pTongi
         )
@@ -1089,7 +1101,7 @@ private fun InteractiveMapCard(
       Surface(
         onClick = onRecenter,
         shape = CircleShape,
-        color = Color.White,
+        color = CardBg,
         shadowElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
         modifier = Modifier
@@ -1110,7 +1122,7 @@ private fun InteractiveMapCard(
       // Floating Middle-Right Zoom Controls (+ and -)
       Surface(
         shape = RoundedCornerShape(12.dp),
-        color = Color.White,
+        color = CardBg,
         shadowElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
         modifier = Modifier
@@ -1154,7 +1166,7 @@ private fun InteractiveMapCard(
       // Floating Bottom-Left Legend Card
       Surface(
         shape = RoundedCornerShape(12.dp),
-        color = Color.White.copy(alpha = 0.94f),
+        color = CardBg.copy(alpha = 0.94f),
         shadowElevation = 1.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
         modifier = Modifier
@@ -1387,7 +1399,7 @@ private fun UpcomingStopsSection(
 
     Surface(
       shape = RoundedCornerShape(18.dp),
-      color = Color.White,
+      color = CardBg,
       shadowElevation = 2.dp,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier.fillMaxWidth()
@@ -1496,7 +1508,7 @@ private fun ServiceUpdateCard(
   Surface(
     onClick = onClick,
     shape = RoundedCornerShape(18.dp),
-    color = Color.White,
+    color = CardBg,
     shadowElevation = 2.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier
@@ -1568,7 +1580,7 @@ private fun DashboardBottomNavigation(
 ) {
   Surface(
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-    color = Color.White,
+    color = CardBg,
     shadowElevation = 12.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier.fillMaxWidth()
@@ -2014,9 +2026,9 @@ private fun AllStopsSheetContent(
           onClick = { onSelectStop(stop) },
           shape = RoundedCornerShape(12.dp),
           color = when {
-            isCurrent -> Color(0xFFFFEBEE)
-            isNext -> Color(0xFFFFF7ED)
-            else -> Color.White
+            isCurrent -> if (SadaTheme.isDark) Color(0xFF331119) else Color(0xFFFFEBEE)
+            isNext -> if (SadaTheme.isDark) Color(0xFF261114) else Color(0xFFFFF7ED)
+            else -> CardBg
           },
           border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -2134,7 +2146,7 @@ private fun ServiceUpdateSheetContent(
     // Toggle 1: Bus is Full
     Surface(
       shape = RoundedCornerShape(14.dp),
-      color = Color.White,
+      color = CardBg,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier.fillMaxWidth()
     ) {
@@ -2172,7 +2184,7 @@ private fun ServiceUpdateSheetContent(
     // Toggle 2: Bus in Elevated Route
     Surface(
       shape = RoundedCornerShape(14.dp),
-      color = Color.White,
+      color = CardBg,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier.fillMaxWidth()
     ) {

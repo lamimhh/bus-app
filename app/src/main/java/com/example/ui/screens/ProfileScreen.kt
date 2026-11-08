@@ -98,7 +98,9 @@ import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.model.AppScreen
 import com.example.model.UserProfile
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
+import com.example.viewmodel.ThemeViewModel
 
 // Color palette matching 5_3f4a0c72.jpeg
 private val ScreenBg = Color(0xFFFAF7F2)
@@ -118,13 +120,27 @@ private val BadgeCountRed = Color(0xFF7E0E1C)
 @Composable
 fun ProfileScreen(
   viewModel: BusViewModel,
+  themeViewModel: ThemeViewModel? = null,
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
   val userProfile by viewModel.userProfile.collectAsState()
 
-  // 1. Dark Mode toggle state (Specification 1)
-  var isDarkMode by remember { mutableStateOf(false) }
+  // 1. Dark Mode toggle state bound to global persistent ThemeViewModel
+  val isDarkMode by (themeViewModel?.isDarkMode ?: viewModel.isDarkMode).collectAsState()
+
+  val onThemeToggle: (Boolean) -> Unit = { enabled ->
+    if (themeViewModel != null) {
+      themeViewModel.setDarkMode(enabled)
+    } else {
+      viewModel.setDarkMode(enabled, context)
+    }
+    Toast.makeText(
+      context,
+      if (enabled) "Dark theme enabled" else "Light theme enabled",
+      Toast.LENGTH_SHORT
+    ).show()
+  }
 
   // Modal / Sheet Dialog states
   var isControlPanelModalOpen by remember { mutableStateOf(false) }
@@ -139,7 +155,7 @@ fun ProfileScreen(
       .fillMaxSize()
       .background(
         brush = Brush.verticalGradient(
-          colors = if (isDarkMode) listOf(Color(0xFF1A1315), Color(0xFF110B0D)) else listOf(ScreenBg, ScreenBgEnd)
+          colors = if (isDarkMode) listOf(Color(0xFF120A0D), Color(0xFF0A0507)) else listOf(ScreenBg, ScreenBgEnd)
         )
       )
   ) {
@@ -155,14 +171,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(4.dp))
         ProfileTopBar(
           isDarkMode = isDarkMode,
-          onDarkModeToggle = {
-            isDarkMode = it
-            Toast.makeText(
-              context,
-              if (it) "Dark theme enabled" else "Light theme enabled",
-              Toast.LENGTH_SHORT
-            ).show()
-          }
+          onDarkModeToggle = onThemeToggle
         )
       }
 
@@ -198,14 +207,7 @@ fun ProfileScreen(
       item {
         PreferencesSection(
           isDarkMode = isDarkMode,
-          onDarkModeToggle = {
-            isDarkMode = it
-            Toast.makeText(
-              context,
-              if (it) "Dark theme enabled" else "Light theme enabled",
-              Toast.LENGTH_SHORT
-            ).show()
-          },
+          onDarkModeToggle = onThemeToggle,
           onSettingsClick = { isSettingsSheetOpen = true }
         )
       }
@@ -358,7 +360,7 @@ private fun ProfileTopBar(
         modifier = Modifier
           .size(46.dp)
           .clip(CircleShape)
-          .border(1.5.dp, MaroonDeep, CircleShape)
+          .border(1.5.dp, if (isDarkMode) Color(0xFFEF4444) else MaroonDeep, CircleShape)
       )
       Spacer(modifier = Modifier.width(10.dp))
       Column {
@@ -368,7 +370,7 @@ private fun ProfileTopBar(
           fontSize = 15.sp,
           fontWeight = FontWeight.Bold,
           letterSpacing = 2.sp,
-          color = MaroonDeep,
+          color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
           lineHeight = 16.sp
         )
         Text(
@@ -377,7 +379,7 @@ private fun ProfileTopBar(
           fontSize = 17.sp,
           fontWeight = FontWeight.Black,
           letterSpacing = 2.5.sp,
-          color = MaroonDeep,
+          color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
           lineHeight = 18.sp
         )
         Text(
@@ -385,7 +387,7 @@ private fun ProfileTopBar(
           fontSize = 8.5.sp,
           fontWeight = FontWeight.Bold,
           letterSpacing = 1.2.sp,
-          color = TextGrey
+          color = if (isDarkMode) Color(0xFFCBD5E1) else TextGrey
         )
       }
     }
@@ -393,9 +395,9 @@ private fun ProfileTopBar(
     // Right: Dark Mode Toggle Switch (Requirement 1)
     Surface(
       shape = RoundedCornerShape(20.dp),
-      color = Color.White,
+      color = if (isDarkMode) Color(0xFF240D12) else Color.White,
       shadowElevation = 2.dp,
-      border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+      border = androidx.compose.foundation.BorderStroke(1.dp, if (isDarkMode) Color(0xFF4A1E26) else CardBorderColor),
       modifier = Modifier.testTag("top_bar_dark_mode_switch")
     ) {
       Row(
@@ -405,7 +407,7 @@ private fun ProfileTopBar(
         Icon(
           imageVector = Icons.Default.DarkMode,
           contentDescription = "Dark Mode Toggle",
-          tint = if (isDarkMode) MaroonDeep else TextGrey,
+          tint = if (isDarkMode) Color(0xFFEF4444) else TextGrey,
           modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(6.dp))
@@ -414,9 +416,9 @@ private fun ProfileTopBar(
           onCheckedChange = onDarkModeToggle,
           colors = SwitchDefaults.colors(
             checkedThumbColor = Color.White,
-            checkedTrackColor = MaroonDeep,
+            checkedTrackColor = if (isDarkMode) Color(0xFFEF4444) else MaroonDeep,
             uncheckedThumbColor = TextGrey,
-            uncheckedTrackColor = Color(0xFFEDE4DC)
+            uncheckedTrackColor = if (isDarkMode) Color(0xFF38131B) else Color(0xFFEDE4DC)
           ),
           modifier = Modifier.padding(start = 2.dp)
         )
@@ -434,10 +436,18 @@ private fun FixedProfileCard(
   onVerifyInfoClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+  val cardBg = if (isDark) Color(0xFF240D12) else Color.White
+  val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val accentColor = if (isDark) Color(0xFFEF4444) else MaroonDeep
+  val tileBg = if (isDark) Color(0xFF38131B) else TileIconBg
+
   Card(
     shape = RoundedCornerShape(24.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+    colors = CardDefaults.cardColors(containerColor = cardBg),
+    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = modifier
       .fillMaxWidth()
@@ -456,8 +466,8 @@ private fun FixedProfileCard(
           // Circular avatar container
           Surface(
             shape = CircleShape,
-            color = TileIconBg,
-            border = androidx.compose.foundation.BorderStroke(2.dp, MaroonDeep),
+            color = tileBg,
+            border = androidx.compose.foundation.BorderStroke(2.dp, accentColor),
             modifier = Modifier.size(76.dp)
           ) {
             Image(
@@ -474,8 +484,8 @@ private fun FixedProfileCard(
               .align(Alignment.CenterEnd)
               .size(10.dp)
               .clip(CircleShape)
-              .background(MaroonDeep)
-              .border(1.5.dp, Color.White, CircleShape)
+              .background(accentColor)
+              .border(1.5.dp, cardBg, CircleShape)
           )
         }
 
@@ -488,7 +498,7 @@ private fun FixedProfileCard(
             text = userProfile.name, // "Lamim"
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = TextDark
+            color = textPrimary
           )
 
           Spacer(modifier = Modifier.height(4.dp))
@@ -498,7 +508,7 @@ private fun FixedProfileCard(
             Icon(
               imageVector = Icons.Default.School,
               contentDescription = null,
-              tint = MaroonDeep,
+              tint = accentColor,
               modifier = Modifier.size(15.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -506,7 +516,7 @@ private fun FixedProfileCard(
               text = userProfile.department, // "Finance & Banking"
               fontSize = 13.sp,
               fontWeight = FontWeight.Medium,
-              color = TextDark
+              color = textPrimary
             )
           }
 
@@ -517,14 +527,14 @@ private fun FixedProfileCard(
             Icon(
               imageVector = Icons.Default.DateRange,
               contentDescription = null,
-              tint = TextGrey,
+              tint = textSecondary,
               modifier = Modifier.size(15.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = "Session ${userProfile.session}", // "Session 2022-23"
               fontSize = 12.5.sp,
-              color = TextGrey
+              color = textSecondary
             )
           }
 
@@ -535,14 +545,14 @@ private fun FixedProfileCard(
             Icon(
               imageVector = Icons.Default.Email,
               contentDescription = null,
-              tint = TextGrey,
+              tint = textSecondary,
               modifier = Modifier.size(15.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = userProfile.email, // "hafizhossainlamim@gmail.com"
               fontSize = 11.5.sp,
-              color = TextGrey
+              color = textSecondary
             )
           }
         }
@@ -553,8 +563,8 @@ private fun FixedProfileCard(
       // Verified Badge Pill (Indicating non-editable verified credentials)
       Surface(
         shape = RoundedCornerShape(12.dp),
-        color = TileIconBg,
-        border = androidx.compose.foundation.BorderStroke(0.8.dp, CardBorderColor),
+        color = tileBg,
+        border = androidx.compose.foundation.BorderStroke(0.8.dp, cardBorder),
         modifier = Modifier
           .fillMaxWidth()
           .clickable { onVerifyInfoClick() }
@@ -568,7 +578,7 @@ private fun FixedProfileCard(
             Icon(
               imageVector = Icons.Default.Verified,
               contentDescription = null,
-              tint = MaroonDeep,
+              tint = if (isDark) Color(0xFFF87171) else MaroonDeep,
               modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -576,20 +586,20 @@ private fun FixedProfileCard(
               text = "Verified Student Pass • DU 7 Colleges",
               fontSize = 11.5.sp,
               fontWeight = FontWeight.Bold,
-              color = MaroonDeep
+              color = if (isDark) Color(0xFFF87171) else MaroonDeep
             )
           }
 
           Surface(
             shape = RoundedCornerShape(8.dp),
-            color = Color.White,
-            border = androidx.compose.foundation.BorderStroke(0.5.dp, CardBorderColor)
+            color = cardBg,
+            border = androidx.compose.foundation.BorderStroke(0.5.dp, cardBorder)
           ) {
             Text(
               text = "Fixed ID",
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold,
-              color = TextGrey,
+              color = textSecondary,
               modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
             )
           }
@@ -620,10 +630,15 @@ private fun BusServicesSection(
     Spacer(modifier = Modifier.height(8.dp))
 
     // Card with 4 Tile rows matching 5_3f4a0c72.jpeg
+    val isDark = SadaTheme.isDark
+    val cardBg = if (isDark) Color(0xFF240D12) else Color.White
+    val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+    val dividerCol = if (isDark) Color(0xFF35151D) else CardBorderColor
+
     Card(
       shape = RoundedCornerShape(22.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+      colors = CardDefaults.cardColors(containerColor = cardBg),
+      border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder),
       elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
       modifier = Modifier.fillMaxWidth()
     ) {
@@ -638,7 +653,7 @@ private fun BusServicesSection(
           testTag = "tile_notice_box"
         )
 
-        Divider(color = CardBorderColor, thickness = 0.8.dp)
+        Divider(color = dividerCol, thickness = 0.8.dp)
 
         // Tile 2: Sada Bus Control Panel / Moderator (Unrestricted - Spec 3b)
         ProfileTileItem(
@@ -650,7 +665,7 @@ private fun BusServicesSection(
           testTag = "tile_moderator_panel"
         )
 
-        Divider(color = CardBorderColor, thickness = 0.8.dp)
+        Divider(color = dividerCol, thickness = 0.8.dp)
 
         // Tile 3: Complaint Box
         ProfileTileItem(
@@ -661,7 +676,7 @@ private fun BusServicesSection(
           testTag = "tile_complaint_box"
         )
 
-        Divider(color = CardBorderColor, thickness = 0.8.dp)
+        Divider(color = dividerCol, thickness = 0.8.dp)
 
         // Tile 4: Crew
         ProfileTileItem(
@@ -685,6 +700,11 @@ private fun CommunitySection(
   onAboutClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+  val cardBg = if (isDark) Color(0xFF240D12) else Color.White
+  val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val dividerCol = if (isDark) Color(0xFF35151D) else CardBorderColor
+
   Column(modifier = modifier.fillMaxWidth()) {
     // Section Header
     SectionHeader(
@@ -696,8 +716,8 @@ private fun CommunitySection(
 
     Card(
       shape = RoundedCornerShape(22.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+      colors = CardDefaults.cardColors(containerColor = cardBg),
+      border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder),
       elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
       modifier = Modifier.fillMaxWidth()
     ) {
@@ -711,7 +731,7 @@ private fun CommunitySection(
           testTag = "tile_community"
         )
 
-        Divider(color = CardBorderColor, thickness = 0.8.dp)
+        Divider(color = dividerCol, thickness = 0.8.dp)
 
         // Tile 2: About
         ProfileTileItem(
@@ -736,6 +756,15 @@ private fun PreferencesSection(
   onSettingsClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+  val cardBg = if (isDark) Color(0xFF240D12) else Color.White
+  val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val dividerCol = if (isDark) Color(0xFF35151D) else CardBorderColor
+  val tileBg = if (isDark) Color(0xFF38131B) else TileIconBg
+  val iconTint = if (isDark) Color(0xFFEF4444) else MaroonDeep
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+
   Column(modifier = modifier.fillMaxWidth()) {
     // Section Header
     SectionHeader(
@@ -747,8 +776,8 @@ private fun PreferencesSection(
 
     Card(
       shape = RoundedCornerShape(22.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+      colors = CardDefaults.cardColors(containerColor = cardBg),
+      border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder),
       elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
       modifier = Modifier.fillMaxWidth()
     ) {
@@ -762,7 +791,7 @@ private fun PreferencesSection(
           testTag = "tile_preferences_settings"
         )
 
-        Divider(color = CardBorderColor, thickness = 0.8.dp)
+        Divider(color = dividerCol, thickness = 0.8.dp)
 
         // Tile 2: Dark Mode Row with inline Switch component (Spec 5)
         Row(
@@ -775,14 +804,14 @@ private fun PreferencesSection(
         ) {
           Surface(
             shape = CircleShape,
-            color = TileIconBg,
+            color = tileBg,
             modifier = Modifier.size(42.dp)
           ) {
             Box(contentAlignment = Alignment.Center) {
               Icon(
                 imageVector = Icons.Default.DarkMode,
                 contentDescription = null,
-                tint = MaroonDeep,
+                tint = iconTint,
                 modifier = Modifier.size(20.dp)
               )
             }
@@ -795,12 +824,12 @@ private fun PreferencesSection(
               text = "Dark Mode",
               fontSize = 15.sp,
               fontWeight = FontWeight.Bold,
-              color = TextDark
+              color = textPrimary
             )
             Text(
               text = "Switch between light & dark theme",
               fontSize = 12.sp,
-              color = TextGrey
+              color = textSecondary
             )
           }
 
@@ -809,9 +838,9 @@ private fun PreferencesSection(
             onCheckedChange = onDarkModeToggle,
             colors = SwitchDefaults.colors(
               checkedThumbColor = Color.White,
-              checkedTrackColor = MaroonDeep,
+              checkedTrackColor = if (isDarkMode) Color(0xFFEF4444) else MaroonDeep,
               uncheckedThumbColor = TextGrey,
-              uncheckedTrackColor = Color(0xFFEDE4DC)
+              uncheckedTrackColor = if (isDarkMode) Color(0xFF38131B) else Color(0xFFEDE4DC)
             )
           )
         }
@@ -829,11 +858,15 @@ private fun SectionHeader(
   title: String,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+  val maroonAccent = if (isDark) Color(0xFFEF4444) else MaroonDeep
+  val textCol = if (isDark) Color(0xFFF87171) else MaroonDeep
+
   Column(modifier = modifier) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       Surface(
         shape = CircleShape,
-        color = MaroonDeep,
+        color = maroonAccent,
         modifier = Modifier.size(24.dp)
       ) {
         Box(contentAlignment = Alignment.Center) {
@@ -851,7 +884,7 @@ private fun SectionHeader(
         fontSize = 12.sp,
         fontWeight = FontWeight.Black,
         letterSpacing = 1.sp,
-        color = MaroonDeep
+        color = textCol
       )
     }
     Spacer(modifier = Modifier.height(3.dp))
@@ -860,7 +893,7 @@ private fun SectionHeader(
         .padding(start = 32.dp)
         .width(36.dp)
         .height(2.5.dp)
-        .background(MaroonDeep, RoundedCornerShape(1.dp))
+        .background(maroonAccent, RoundedCornerShape(1.dp))
     )
   }
 }
@@ -875,6 +908,15 @@ private fun ProfileTileItem(
   onClick: () -> Unit,
   testTag: String = ""
 ) {
+  val isDark = SadaTheme.isDark
+  val iconBg = if (isDark) Color(0xFF38131B) else TileIconBg
+  val iconTint = if (isDark) Color(0xFFEF4444) else MaroonDeep
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val labelBg = if (isDark) Color(0xFF38131B) else TileIconBg
+  val labelBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val labelText = if (isDark) Color(0xFFF87171) else MaroonDeep
+
   Row(
     modifier = Modifier
       .fillMaxWidth()
@@ -885,14 +927,14 @@ private fun ProfileTileItem(
   ) {
     Surface(
       shape = CircleShape,
-      color = TileIconBg,
+      color = iconBg,
       modifier = Modifier.size(42.dp)
     ) {
       Box(contentAlignment = Alignment.Center) {
         Icon(
           imageVector = icon,
           contentDescription = null,
-          tint = MaroonDeep,
+          tint = iconTint,
           modifier = Modifier.size(20.dp)
         )
       }
@@ -905,12 +947,12 @@ private fun ProfileTileItem(
         text = title,
         fontSize = 15.sp,
         fontWeight = FontWeight.Bold,
-        color = TextDark
+        color = textPrimary
       )
       Text(
         text = subtitle,
         fontSize = 12.sp,
-        color = TextGrey
+        color = textSecondary
       )
     }
 
@@ -936,14 +978,14 @@ private fun ProfileTileItem(
     if (rightLabel != null) {
       Surface(
         shape = RoundedCornerShape(6.dp),
-        color = TileIconBg,
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, CardBorderColor)
+        color = labelBg,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, labelBorder)
       ) {
         Text(
           text = rightLabel,
           fontSize = 10.sp,
           fontWeight = FontWeight.Bold,
-          color = MaroonDeep,
+          color = labelText,
           modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
       }
@@ -964,6 +1006,7 @@ private fun ProfileTileItem(
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun BrandFooter(modifier: Modifier = Modifier) {
+  val isDark = SadaTheme.isDark
   Column(
     modifier = modifier
       .fillMaxWidth()
@@ -972,8 +1015,8 @@ private fun BrandFooter(modifier: Modifier = Modifier) {
   ) {
     Surface(
       shape = CircleShape,
-      color = Color.White,
-      border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+      color = if (isDark) Color(0xFF240D12) else Color.White,
+      border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF4A1E26) else CardBorderColor),
       modifier = Modifier.size(34.dp)
     ) {
       Box(contentAlignment = Alignment.Center) {
@@ -982,7 +1025,7 @@ private fun BrandFooter(modifier: Modifier = Modifier) {
           fontFamily = FontFamily.Serif,
           fontSize = 16.sp,
           fontWeight = FontWeight.Black,
-          color = MaroonDeep
+          color = if (isDark) Color(0xFFF87171) else MaroonDeep
         )
       }
     }
@@ -992,13 +1035,13 @@ private fun BrandFooter(modifier: Modifier = Modifier) {
       fontSize = 9.sp,
       fontWeight = FontWeight.Bold,
       letterSpacing = 1.2.sp,
-      color = TextGrey
+      color = if (isDark) Color(0xFFCBD5E1) else TextGrey
     )
     Spacer(modifier = Modifier.height(2.dp))
     Text(
       text = "Thank you for being with Sada Shundori ❤️",
       fontSize = 11.sp,
-      color = TextGrey
+      color = if (isDark) Color(0xFF94A3B8) else TextGrey
     )
   }
 }
@@ -1018,10 +1061,18 @@ private fun ModeratorControlPanelDialog(
     Triple("Fahim Morshed", "Student Safety & Emergency Response Lead", "+880 1913-778899")
   )
 
+  val isDark = SadaTheme.isDark
+  val dialogBg = if (isDark) Color(0xFF240D12) else Color.White
+  val itemBg = if (isDark) Color(0xFF1E0B10) else TileIconBg
+  val itemBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val accentColor = if (isDark) Color(0xFFEF4444) else MaroonDeep
+
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = dialogBg,
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth()
@@ -1038,7 +1089,7 @@ private fun ModeratorControlPanelDialog(
           Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
               shape = CircleShape,
-              color = MaroonDeep,
+              color = accentColor,
               modifier = Modifier.size(36.dp)
             ) {
               Box(contentAlignment = Alignment.Center) {
@@ -1056,12 +1107,12 @@ private fun ModeratorControlPanelDialog(
                 text = "Control Panel & Moderators",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDark
+                color = textPrimary
               )
               Text(
                 text = "Unrestricted Committee Roster",
                 fontSize = 11.sp,
-                color = MaroonDeep,
+                color = if (isDark) Color(0xFFF87171) else MaroonDeep,
                 fontWeight = FontWeight.Bold
               )
             }
@@ -1070,7 +1121,7 @@ private fun ModeratorControlPanelDialog(
           Icon(
             imageVector = Icons.Default.Close,
             contentDescription = "Close",
-            tint = TextGrey,
+            tint = textSecondary,
             modifier = Modifier
               .size(22.dp)
               .clickable { onDismiss() }
@@ -1082,7 +1133,7 @@ private fun ModeratorControlPanelDialog(
         Text(
           text = "The Sada Shundori operations desk is openly accessible to all verified students and faculty. For schedule adjustments, route safety, or lost & found verification, contact the coordinators below:",
           fontSize = 12.sp,
-          color = TextGrey,
+          color = textSecondary,
           lineHeight = 16.sp
         )
 
@@ -1092,8 +1143,8 @@ private fun ModeratorControlPanelDialog(
           moderators.forEach { (name, role, phone) ->
             Surface(
               shape = RoundedCornerShape(14.dp),
-              color = TileIconBg,
-              border = androidx.compose.foundation.BorderStroke(0.8.dp, CardBorderColor),
+              color = itemBg,
+              border = androidx.compose.foundation.BorderStroke(0.8.dp, itemBorder),
               modifier = Modifier.fillMaxWidth()
             ) {
               Row(
@@ -1106,24 +1157,24 @@ private fun ModeratorControlPanelDialog(
                     text = name,
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextDark
+                    color = textPrimary
                   )
                   Text(
                     text = role,
                     fontSize = 11.sp,
-                    color = TextGrey
+                    color = textSecondary
                   )
                   Text(
                     text = phone,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaroonDeep
+                    color = if (isDark) Color(0xFFF87171) else MaroonDeep
                   )
                 }
 
                 Surface(
                   shape = CircleShape,
-                  color = MaroonDeep,
+                  color = accentColor,
                   modifier = Modifier
                     .size(34.dp)
                     .clickable { onCall(phone) }
@@ -1165,10 +1216,16 @@ private fun CommunityDialog(
   onDismiss: () -> Unit,
   onOpenLink: (String) -> Unit
 ) {
+  val isDark = SadaTheme.isDark
+  val dialogBg = if (isDark) Color(0xFF240D12) else Color.White
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val accentColor = if (isDark) Color(0xFFEF4444) else MaroonDeep
+
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = dialogBg,
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth()
@@ -1184,7 +1241,7 @@ private fun CommunityDialog(
           Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
               shape = CircleShape,
-              color = MaroonDeep,
+              color = accentColor,
               modifier = Modifier.size(36.dp)
             ) {
               Box(contentAlignment = Alignment.Center) {
@@ -1202,12 +1259,12 @@ private fun CommunityDialog(
                 text = "Passenger Community",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDark
+                color = textPrimary
               )
               Text(
                 text = "Dhaka University 7 Colleges",
                 fontSize = 11.sp,
-                color = TextGrey
+                color = textSecondary
               )
             }
           }
@@ -1215,7 +1272,7 @@ private fun CommunityDialog(
           Icon(
             imageVector = Icons.Default.Close,
             contentDescription = "Close",
-            tint = TextGrey,
+            tint = textSecondary,
             modifier = Modifier
               .size(22.dp)
               .clickable { onDismiss() }
@@ -1227,7 +1284,7 @@ private fun CommunityDialog(
         Text(
           text = "Connect with over 4,500 daily commuters across Dhaka College, Eden Mohila College, Titumir College, and other affiliated campuses for ride sharing, traffic alerts, and community meetups:",
           fontSize = 12.sp,
-          color = TextGrey,
+          color = textSecondary,
           lineHeight = 16.sp
         )
 
@@ -1259,7 +1316,7 @@ private fun CommunityDialog(
         Button(
           onClick = onDismiss,
           shape = RoundedCornerShape(14.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = MaroonDeep),
+          colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF881324) else MaroonDeep),
           modifier = Modifier.fillMaxWidth()
         ) {
           Text("Close", fontWeight = FontWeight.Bold, color = Color.White)
@@ -1275,10 +1332,17 @@ private fun CommunityChannelItem(
   desc: String,
   onClick: () -> Unit
 ) {
+  val isDark = SadaTheme.isDark
+  val itemBg = if (isDark) Color(0xFF1E0B10) else TileIconBg
+  val itemBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val iconTint = if (isDark) Color(0xFFEF4444) else MaroonDeep
+
   Surface(
     shape = RoundedCornerShape(14.dp),
-    color = TileIconBg,
-    border = androidx.compose.foundation.BorderStroke(0.8.dp, CardBorderColor),
+    color = itemBg,
+    border = androidx.compose.foundation.BorderStroke(0.8.dp, itemBorder),
     modifier = Modifier
       .fillMaxWidth()
       .clickable { onClick() }
@@ -1289,13 +1353,13 @@ private fun CommunityChannelItem(
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
       Column(modifier = Modifier.weight(1f)) {
-        Text(text = name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextDark)
-        Text(text = desc, fontSize = 11.sp, color = TextGrey)
+        Text(text = name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+        Text(text = desc, fontSize = 11.sp, color = textSecondary)
       }
       Icon(
         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
         contentDescription = "Open",
-        tint = MaroonDeep,
+        tint = iconTint,
         modifier = Modifier.size(18.dp)
       )
     }
@@ -1309,10 +1373,18 @@ private fun CommunityChannelItem(
 private fun AboutSadaShundoriDialog(
   onDismiss: () -> Unit
 ) {
+  val isDark = SadaTheme.isDark
+  val dialogBg = if (isDark) Color(0xFF240D12) else Color.White
+  val itemBg = if (isDark) Color(0xFF1E0B10) else TileIconBg
+  val itemBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val accentColor = if (isDark) Color(0xFFEF4444) else MaroonDeep
+
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = dialogBg,
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth()
@@ -1328,7 +1400,7 @@ private fun AboutSadaShundoriDialog(
           Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
               shape = CircleShape,
-              color = MaroonDeep,
+              color = accentColor,
               modifier = Modifier.size(36.dp)
             ) {
               Box(contentAlignment = Alignment.Center) {
@@ -1346,12 +1418,12 @@ private fun AboutSadaShundoriDialog(
                 text = "About Sada Shundori",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDark
+                color = textPrimary
               )
               Text(
                 text = "Campus Bus Companion • v2.4",
                 fontSize = 11.sp,
-                color = TextGrey
+                color = textSecondary
               )
             }
           }
@@ -1359,7 +1431,7 @@ private fun AboutSadaShundoriDialog(
           Icon(
             imageVector = Icons.Default.Close,
             contentDescription = "Close",
-            tint = TextGrey,
+            tint = textSecondary,
             modifier = Modifier
               .size(22.dp)
               .clickable { onDismiss() }
@@ -1373,7 +1445,7 @@ private fun AboutSadaShundoriDialog(
               "Spanning 18 essential stops from Gazipur National University Gate through Tongi, Uttara, and Airport down to the DU Curzon Hall & Nilkhet Campus.\n\n" +
               "Designed with love to ensure punctual, secure, and stress-free academic commutes with real-time GPS tracking and community updates.",
           fontSize = 12.sp,
-          color = TextGrey,
+          color = textSecondary,
           lineHeight = 17.sp
         )
 
@@ -1381,14 +1453,14 @@ private fun AboutSadaShundoriDialog(
 
         Surface(
           shape = RoundedCornerShape(12.dp),
-          color = TileIconBg,
-          border = androidx.compose.foundation.BorderStroke(0.8.dp, CardBorderColor),
+          color = itemBg,
+          border = androidx.compose.foundation.BorderStroke(0.8.dp, itemBorder),
           modifier = Modifier.fillMaxWidth()
         ) {
           Column(modifier = Modifier.padding(12.dp)) {
-            Text(text = "Fleet Identifier: SS-01 / Metro-Ba 15-8824", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaroonDeep)
-            Text(text = "Operated under DU 7 Colleges Transport Syndicate", fontSize = 10.5.sp, color = TextGrey)
-            Text(text = "Lead Developer: Hafiz Hossain Lamim (Finance & Banking)", fontSize = 10.5.sp, color = TextGrey)
+            Text(text = "Fleet Identifier: SS-01 / Metro-Ba 15-8824", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFFF87171) else MaroonDeep)
+            Text(text = "Operated under DU 7 Colleges Transport Syndicate", fontSize = 10.5.sp, color = textSecondary)
+            Text(text = "Lead Developer: Hafiz Hossain Lamim (Finance & Banking)", fontSize = 10.5.sp, color = textSecondary)
           }
         }
 
@@ -1397,7 +1469,7 @@ private fun AboutSadaShundoriDialog(
         Button(
           onClick = onDismiss,
           shape = RoundedCornerShape(14.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = MaroonDeep),
+          colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF881324) else MaroonDeep),
           modifier = Modifier.fillMaxWidth()
         ) {
           Text("Got It", fontWeight = FontWeight.Bold, color = Color.White)
@@ -1418,12 +1490,15 @@ private fun SettingsBottomSheet(
   onOpenSearch: () -> Unit,
   onReportProblem: () -> Unit
 ) {
+  val isDark = SadaTheme.isDark
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+  val sheetBg = if (isDark) Color(0xFF1E0B10) else Color.White
+  val dividerCol = if (isDark) Color(0xFF35151D) else CardBorderColor
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = Color.White,
+    containerColor = sheetBg,
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
   ) {
     Column(
@@ -1441,13 +1516,13 @@ private fun SettingsBottomSheet(
           text = "Preferences & Settings",
           fontSize = 18.sp,
           fontWeight = FontWeight.Bold,
-          color = TextDark
+          color = if (isDark) Color(0xFFF8FAFC) else TextDark
         )
 
         Icon(
           imageVector = Icons.Default.Close,
           contentDescription = "Close",
-          tint = TextGrey,
+          tint = if (isDark) Color(0xFFCBD5E1) else TextGrey,
           modifier = Modifier
             .size(22.dp)
             .clickable { onDismiss() }
@@ -1464,7 +1539,7 @@ private fun SettingsBottomSheet(
         onClick = onOpenSearch
       )
 
-      Divider(color = CardBorderColor, thickness = 0.8.dp)
+      Divider(color = dividerCol, thickness = 0.8.dp)
 
       // 2. Help & Support (Spec 5)
       SettingsOptionRow(
@@ -1474,14 +1549,14 @@ private fun SettingsBottomSheet(
         onClick = onOpenHelp
       )
 
-      Divider(color = CardBorderColor, thickness = 0.8.dp)
+      Divider(color = dividerCol, thickness = 0.8.dp)
 
       // 3. Report a Problem (Spec 5)
       SettingsOptionRow(
         icon = Icons.Default.ReportProblem,
         title = "Report a Problem",
         subtitle = "Submit app diagnostic report or bug notice",
-        iconTint = MaroonDeep,
+        iconTint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
         onClick = onReportProblem
       )
 
@@ -1498,6 +1573,11 @@ private fun SettingsOptionRow(
   iconTint: Color = MaroonDeep,
   onClick: () -> Unit
 ) {
+  val isDark = SadaTheme.isDark
+  val itemBg = if (isDark) Color(0xFF38131B) else TileIconBg
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+
   Row(
     modifier = Modifier
       .fillMaxWidth()
@@ -1507,7 +1587,7 @@ private fun SettingsOptionRow(
   ) {
     Surface(
       shape = CircleShape,
-      color = TileIconBg,
+      color = itemBg,
       modifier = Modifier.size(38.dp)
     ) {
       Box(contentAlignment = Alignment.Center) {
@@ -1523,14 +1603,14 @@ private fun SettingsOptionRow(
     Spacer(modifier = Modifier.width(14.dp))
 
     Column(modifier = Modifier.weight(1f)) {
-      Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextDark)
-      Text(text = subtitle, fontSize = 11.5.sp, color = TextGrey)
+      Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textPrimary)
+      Text(text = subtitle, fontSize = 11.5.sp, color = textSecondary)
     }
 
     Icon(
       imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
       contentDescription = null,
-      tint = TextGrey,
+      tint = textSecondary,
       modifier = Modifier.size(18.dp)
     )
   }
@@ -1545,11 +1625,15 @@ private fun ReportProblemDialog(
   onSubmit: (String) -> Unit
 ) {
   var problemDescription by remember { mutableStateOf("") }
+  val isDark = SadaTheme.isDark
+  val dialogBg = if (isDark) Color(0xFF240D12) else Color.White
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = dialogBg,
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth()
@@ -1564,14 +1648,14 @@ private fun ReportProblemDialog(
           Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
               shape = CircleShape,
-              color = BadgeBg,
+              color = if (isDark) Color(0xFF38131B) else BadgeBg,
               modifier = Modifier.size(34.dp)
             ) {
               Box(contentAlignment = Alignment.Center) {
                 Icon(
                   imageVector = Icons.Default.ReportProblem,
                   contentDescription = null,
-                  tint = MaroonDeep,
+                  tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
                   modifier = Modifier.size(18.dp)
                 )
               }
@@ -1581,14 +1665,14 @@ private fun ReportProblemDialog(
               text = "Report a Problem",
               fontSize = 16.sp,
               fontWeight = FontWeight.Bold,
-              color = TextDark
+              color = textPrimary
             )
           }
 
           Icon(
             imageVector = Icons.Default.Close,
             contentDescription = "Close",
-            tint = TextGrey,
+            tint = textSecondary,
             modifier = Modifier
               .size(20.dp)
               .clickable { onDismiss() }
@@ -1600,7 +1684,7 @@ private fun ReportProblemDialog(
         Text(
           text = "Notice inaccurate GPS coordinates, slow updates, or app rendering issues? Let our dev team know:",
           fontSize = 12.sp,
-          color = TextGrey
+          color = textSecondary
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -1608,7 +1692,7 @@ private fun ReportProblemDialog(
         OutlinedTextField(
           value = problemDescription,
           onValueChange = { problemDescription = it },
-          placeholder = { Text("Describe the issue in detail...", fontSize = 12.sp) },
+          placeholder = { Text("Describe the issue in detail...", fontSize = 12.sp, color = textSecondary) },
           minLines = 3,
           maxLines = 5,
           shape = RoundedCornerShape(12.dp),
@@ -1624,17 +1708,17 @@ private fun ReportProblemDialog(
           Button(
             onClick = onDismiss,
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = TileIconBg),
+            colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF38131B) else TileIconBg),
             modifier = Modifier.weight(1f)
           ) {
-            Text("Cancel", color = TextDark, fontWeight = FontWeight.SemiBold)
+            Text("Cancel", color = textPrimary, fontWeight = FontWeight.SemiBold)
           }
 
           Button(
             onClick = { onSubmit(problemDescription) },
             enabled = problemDescription.isNotBlank(),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaroonDeep),
+            colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF881324) else MaroonDeep),
             modifier = Modifier.weight(1f)
           ) {
             Text("Submit", color = Color.White, fontWeight = FontWeight.Bold)
@@ -1653,6 +1737,12 @@ private fun HelpAndSearchDialog(
   onDismiss: () -> Unit
 ) {
   var searchQuery by remember { mutableStateOf("") }
+  val isDark = SadaTheme.isDark
+  val dialogBg = if (isDark) Color(0xFF240D12) else Color.White
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val itemBg = if (isDark) Color(0xFF1E0B10) else TileIconBg
+  val itemBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
 
   val faqs = listOf(
     "How is the live bus ETA calculated?" to "ETA is calculated directly using actual device GPS speed deltas and Google road network distances.",
@@ -1669,7 +1759,7 @@ private fun HelpAndSearchDialog(
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = dialogBg,
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth()
@@ -1685,13 +1775,13 @@ private fun HelpAndSearchDialog(
             text = "Help & FAQ Search",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = TextDark
+            color = textPrimary
           )
 
           Icon(
             imageVector = Icons.Default.Close,
             contentDescription = "Close",
-            tint = TextGrey,
+            tint = textSecondary,
             modifier = Modifier
               .size(20.dp)
               .clickable { onDismiss() }
@@ -1703,9 +1793,9 @@ private fun HelpAndSearchDialog(
         OutlinedTextField(
           value = searchQuery,
           onValueChange = { searchQuery = it },
-          placeholder = { Text("Search questions e.g. ETA, route...", fontSize = 12.sp) },
+          placeholder = { Text("Search questions e.g. ETA, route...", fontSize = 12.sp, color = textSecondary) },
           leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = null, tint = TextGrey, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.Search, contentDescription = null, tint = textSecondary, modifier = Modifier.size(18.dp))
           },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
@@ -1721,14 +1811,14 @@ private fun HelpAndSearchDialog(
           filteredFaqs.forEach { (q, a) ->
             Surface(
               shape = RoundedCornerShape(12.dp),
-              color = TileIconBg,
-              border = androidx.compose.foundation.BorderStroke(0.8.dp, CardBorderColor),
+              color = itemBg,
+              border = androidx.compose.foundation.BorderStroke(0.8.dp, itemBorder),
               modifier = Modifier.fillMaxWidth()
             ) {
               Column(modifier = Modifier.padding(10.dp)) {
-                Text(text = q, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = MaroonDeep)
+                Text(text = q, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFFF87171) else MaroonDeep)
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(text = a, fontSize = 11.sp, color = TextGrey, lineHeight = 14.sp)
+                Text(text = a, fontSize = 11.sp, color = textSecondary, lineHeight = 14.sp)
               }
             }
           }
@@ -1739,7 +1829,7 @@ private fun HelpAndSearchDialog(
         Button(
           onClick = onDismiss,
           shape = RoundedCornerShape(12.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = MaroonDeep),
+          colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF881324) else MaroonDeep),
           modifier = Modifier.fillMaxWidth()
         ) {
           Text("Done", fontWeight = FontWeight.Bold, color = Color.White)

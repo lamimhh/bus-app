@@ -1,6 +1,7 @@
 package com.example.model
 
 enum class AppScreen(val label: String) {
+  SPLASH("Splash"),
   WELCOME("Welcome"),
   DASHBOARD("Live Location"),
   PICKUP_FINDER("Pickup Finder"),

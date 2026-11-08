@@ -114,24 +114,44 @@ import com.example.model.BusStatus
 import com.example.model.BusStop
 import com.example.model.CommunityChatMessage
 import com.example.model.UserProfile
+import com.example.ui.theme.SadaTheme
 import com.example.viewmodel.BusViewModel
 
-// Color palette strictly matching image 2 (3_a93872ed.jpeg) & light cream theme
-private val BoardingBg = Color(0xFFFAF7F2)
-private val BoardingBgEnd = Color(0xFFF3ECE4)
-private val MaroonDeep = Color(0xFF4A0A12)
-private val MaroonMid = Color(0xFF6B1120)
-private val MaroonLight = Color(0xFF8B1E2F)
-private val MaroonBadgeBg = Color(0xFFFCECEF)
-private val GoldAccent = Color(0xFFC59B27)
-private val TextDark = Color(0xFF1F1618)
-private val TextGrey = Color(0xFF7A686D)
-private val TextMutedLight = Color(0xFF9E8E92)
-private val CardBorderColor = Color(0xFFEDE4DC)
-private val RouteGreen = Color(0xFF10B981)
-private val RouteRemaining = Color(0xFF7E0E1C)
-private val RiverColor = Color(0xFFC7E2F2)
-private val UserBlue = Color(0xFF2563EB)
+// Dynamic theme color getters matching Light & Luxury Dark Mode palettes
+private val BoardingBg: Color
+  @Composable get() = SadaTheme.colors.background
+private val BoardingBgEnd: Color
+  @Composable get() = SadaTheme.colors.backgroundEnd
+private val MaroonDeep: Color
+  @Composable get() = SadaTheme.colors.maroonDeep
+private val MaroonMid: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF331119) else Color(0xFF6B1120)
+private val MaroonLight: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFFEF4444) else Color(0xFF8B1E2F)
+private val MaroonBadgeBg: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF260D14) else Color(0xFFFCECEF)
+private val GoldAccent: Color
+  @Composable get() = SadaTheme.colors.accentGold
+private val TextDark: Color
+  @Composable get() = SadaTheme.colors.textPrimary
+private val TextGrey: Color
+  @Composable get() = SadaTheme.colors.textSecondary
+private val TextMutedLight: Color
+  @Composable get() = SadaTheme.colors.textMuted
+private val CardBorderColor: Color
+  @Composable get() = SadaTheme.colors.cardBorder
+private val CardBg: Color
+  @Composable get() = SadaTheme.colors.cardBackground
+private val SurfaceBg: Color
+  @Composable get() = SadaTheme.colors.cardSurface
+private val RouteGreen: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF48C774) else Color(0xFF10B981)
+private val RouteRemaining: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFFE2C475) else Color(0xFF7E0E1C)
+private val RiverColor: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF102838) else Color(0xFFC7E2F2)
+private val UserBlue: Color
+  @Composable get() = if (SadaTheme.isDark) Color(0xFF1E88E5) else Color(0xFF2563EB)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -432,8 +452,8 @@ private fun BoardingHeader(
     // Right: Profile Avatar Capsule
     Surface(
       shape = RoundedCornerShape(20.dp),
-      color = Color.White,
-      shadowElevation = 2.dp,
+      color = CardBg,
+      shadowElevation = if (SadaTheme.isDark) 4.dp else 2.dp,
       border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       modifier = Modifier
         .clickable { onProfileClick() }
@@ -446,7 +466,7 @@ private fun BoardingHeader(
         Icon(
           imageVector = Icons.Default.Person,
           contentDescription = "Profile",
-          tint = MaroonDeep,
+          tint = if (SadaTheme.isDark) Color(0xFFF8FAFC) else MaroonDeep,
           modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))
@@ -482,7 +502,7 @@ private fun BoardingSearchAndFilters(
       placeholder = { Text("Search stop, e.g. Tongi, Airport, Nilkhet...", fontSize = 13.sp, color = TextMutedLight) },
       singleLine = true,
       leadingIcon = {
-        Icon(Icons.Default.Search, contentDescription = "Search", tint = MaroonDeep)
+        Icon(Icons.Default.Search, contentDescription = "Search", tint = if (SadaTheme.isDark) MaroonLight else MaroonDeep)
       },
       trailingIcon = {
         if (searchQuery.isNotEmpty()) {
@@ -493,12 +513,12 @@ private fun BoardingSearchAndFilters(
       },
       shape = RoundedCornerShape(14.dp),
       colors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = MaroonDeep,
+        focusedBorderColor = MaroonLight,
         unfocusedBorderColor = CardBorderColor,
         focusedTextColor = TextDark,
         unfocusedTextColor = TextDark,
-        focusedContainerColor = Color.White,
-        unfocusedContainerColor = Color.White
+        focusedContainerColor = SurfaceBg,
+        unfocusedContainerColor = SurfaceBg
       ),
       modifier = Modifier
         .fillMaxWidth()
@@ -513,7 +533,7 @@ private fun BoardingSearchAndFilters(
       items(zones) { zone ->
         val isSelected = selectedZone == zone
         Surface(
-          color = if (isSelected) MaroonDeep else Color.White,
+          color = if (isSelected) MaroonDeep else CardBg,
           shape = RoundedCornerShape(20.dp),
           border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -544,11 +564,18 @@ private fun LiveRouteRadarCard(
   pulseAlpha: Float,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+  val trackBaseColor = if (isDark) Color(0xFF261016) else Color(0xFFE5DDD5)
+  val trackCompletedColor = if (isDark) Color(0xFFDC2626) else RouteGreen
+  val trackRemainingColor = if (isDark) Color(0xFFE2C475) else MaroonDeep.copy(alpha = 0.8f)
+  val busColor = if (isDark) Color(0xFFDC2626) else MaroonDeep
+  val futureColor = if (isDark) Color(0xFF553840) else Color(0xFFBDACB0)
+
   Card(
     shape = RoundedCornerShape(16.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 4.dp else 2.dp),
     modifier = modifier
       .fillMaxWidth()
       .testTag("boarding_route_radar_card")
@@ -563,7 +590,7 @@ private fun LiveRouteRadarCard(
           Icon(
             imageVector = Icons.Default.Map,
             contentDescription = null,
-            tint = MaroonDeep,
+            tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
             modifier = Modifier.size(16.dp)
           )
           Spacer(modifier = Modifier.width(6.dp))
@@ -576,7 +603,7 @@ private fun LiveRouteRadarCard(
         }
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = RouteGreen.copy(alpha = 0.12f)
+          color = RouteGreen.copy(alpha = if (isDark) 0.2f else 0.12f)
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -614,26 +641,26 @@ private fun LiveRouteRadarCard(
 
         // Background Track
         drawLine(
-          color = Color(0xFFE5DDD5),
+          color = trackBaseColor,
           start = Offset(startX, centerY),
           end = Offset(endX, centerY),
           strokeWidth = 6.dp.toPx(),
           cap = StrokeCap.Round
         )
 
-        // Traveled Route (Green)
+        // Traveled Route
         val busProgressX = startX + totalTrack * 0.28f
         drawLine(
-          color = RouteGreen,
+          color = trackCompletedColor,
           start = Offset(startX, centerY),
           end = Offset(busProgressX, centerY),
           strokeWidth = 6.dp.toPx(),
           cap = StrokeCap.Round
         )
 
-        // Remaining Route (Maroon Dashed)
+        // Remaining Route
         drawLine(
-          color = MaroonDeep.copy(alpha = 0.8f),
+          color = trackRemainingColor,
           start = Offset(busProgressX, centerY),
           end = Offset(endX, centerY),
           strokeWidth = 5.dp.toPx(),
@@ -649,9 +676,9 @@ private fun LiveRouteRadarCard(
 
           drawCircle(
             color = when {
-              isBus -> MaroonDeep
-              isPast -> RouteGreen
-              else -> Color(0xFFBDACB0)
+              isBus -> busColor
+              isPast -> trackCompletedColor
+              else -> futureColor
             },
             radius = if (isBus) 7.dp.toPx() else 3.5.dp.toPx(),
             center = Offset(nodeX, centerY)
@@ -659,7 +686,7 @@ private fun LiveRouteRadarCard(
 
           if (isBus) {
             drawCircle(
-              color = MaroonDeep.copy(alpha = 0.35f * pulseAlpha),
+              color = busColor.copy(alpha = 0.35f * pulseAlpha),
               radius = 15.dp.toPx(),
               center = Offset(nodeX, centerY)
             )
@@ -673,7 +700,7 @@ private fun LiveRouteRadarCard(
         horizontalArrangement = Arrangement.SpaceBetween
       ) {
         Text(text = "Gazipur (0km)", fontSize = 9.sp, color = TextGrey)
-        Text(text = "• Tongi (Bus Here)", fontSize = 9.5.sp, color = MaroonDeep, fontWeight = FontWeight.Bold)
+        Text(text = "• Tongi (Bus Here)", fontSize = 9.5.sp, color = if (isDark) Color(0xFFEF4444) else MaroonDeep, fontWeight = FontWeight.Bold)
         Text(text = "Campus (32.5km)", fontSize = 9.sp, color = TextGrey)
       }
     }
@@ -704,11 +731,24 @@ private fun BoardingTransitMapCard(
     label = "radarWave"
   )
 
+  val isDark = SadaTheme.isDark
+  val mapCanvasBg = if (isDark) Color(0xFF10171D) else Color(0xFFF7F8FA)
+  val roadColor = if (isDark) Color(0xFF1D262F) else Color(0xFFE9ECF0)
+  val riverColor = if (isDark) Color(0xFF102838) else RiverColor
+  val completedRouteColor = if (isDark) Color(0xFF8B1D2C) else RouteGreen
+  val remainingRouteColor = if (isDark) Color(0xFFE2C475) else RouteRemaining
+  val nodeGreen = if (isDark) Color(0xFF48C774) else RouteGreen
+  val nodeBus = if (isDark) Color(0xFFDC2626) else MaroonDeep
+  val nodeRemaining = if (isDark) Color(0xFFE2C475) else RouteRemaining
+  val nodeUser = if (isDark) Color(0xFF1E88E5) else UserBlue
+  val goldCol = GoldAccent
+  val recDotCol = if (isDark) Color(0xFFEF4444) else MaroonDeep
+
   Card(
     shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 5.dp else 3.dp),
     modifier = modifier
       .fillMaxWidth()
       .height(260.dp)
@@ -719,13 +759,12 @@ private fun BoardingTransitMapCard(
       Canvas(
         modifier = Modifier
           .fillMaxSize()
-          .background(Color(0xFFF7F8FA))
+          .background(mapCanvasBg)
       ) {
         val w = size.width
         val h = size.height
 
-        // Road network grid (Soft grey lines)
-        val roadColor = Color(0xFFE9ECF0)
+        // Road network grid
         for (y in 20..h.toInt() step 45) {
           drawLine(roadColor, Offset(0f, y.toFloat()), Offset(w, y.toFloat()), 1.5f)
         }
@@ -733,7 +772,7 @@ private fun BoardingTransitMapCard(
           drawLine(roadColor, Offset(x.toFloat(), 0f), Offset(x.toFloat(), h), 1.5f)
         }
 
-        // Turag River Flow (Gentle soft pastel blue curve)
+        // Turag River Flow
         val riverPath = Path().apply {
           moveTo(w * 0.35f, 0f)
           cubicTo(
@@ -759,7 +798,7 @@ private fun BoardingTransitMapCard(
           )
           close()
         }
-        drawPath(riverPath, RiverColor)
+        drawPath(riverPath, riverColor)
 
         // Main Transit Highway Route (Gazipur -> Tongi -> Airport -> Campus)
         val completedRoute = Path().apply {
@@ -768,7 +807,7 @@ private fun BoardingTransitMapCard(
         }
         drawPath(
           path = completedRoute,
-          color = RouteGreen,
+          color = completedRouteColor,
           style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
         )
 
@@ -781,7 +820,7 @@ private fun BoardingTransitMapCard(
         }
         drawPath(
           path = remainingRoute,
-          color = RouteRemaining,
+          color = remainingRouteColor,
           style = Stroke(
             width = 5.dp.toPx(),
             cap = StrokeCap.Round,
@@ -791,41 +830,40 @@ private fun BoardingTransitMapCard(
 
         // Stop Nodes
         // 1. Gazipura 27 (Passed)
-        drawCircle(RouteGreen, radius = 5.dp.toPx(), center = Offset(w * 0.62f, h * 0.08f))
+        drawCircle(nodeGreen, radius = 5.dp.toPx(), center = Offset(w * 0.62f, h * 0.08f))
         drawCircle(Color.White, radius = 2.5.dp.toPx(), center = Offset(w * 0.62f, h * 0.08f))
 
         // 2. Tongi (Current Bus Location)
         val busPos = Offset(w * 0.54f, h * 0.24f)
-        drawCircle(MaroonDeep, radius = 10.dp.toPx(), center = busPos)
+        drawCircle(nodeBus, radius = 10.dp.toPx(), center = busPos)
         drawCircle(Color.White, radius = 8.dp.toPx(), center = busPos)
-        drawCircle(MaroonDeep, radius = 6.dp.toPx(), center = busPos)
+        drawCircle(nodeBus, radius = 6.dp.toPx(), center = busPos)
 
         // 3. Abdullahpur (Next)
         val abdullahpurPos = Offset(w * 0.68f, h * 0.62f)
-        drawCircle(RouteRemaining, radius = 5.dp.toPx(), center = abdullahpurPos)
+        drawCircle(nodeRemaining, radius = 5.dp.toPx(), center = abdullahpurPos)
         drawCircle(Color.White, radius = 2.5.dp.toPx(), center = abdullahpurPos)
 
         // 4. User Location (Blue Radar Circle near Airport/Uttara)
         val userPos = Offset(w * 0.46f, h * 0.35f)
-        // Pulsing radar ripple
         drawCircle(
-          color = UserBlue.copy(alpha = (1f - radarWave) * 0.4f),
+          color = nodeUser.copy(alpha = (1f - radarWave) * 0.4f),
           radius = (10.dp.toPx() + 25.dp.toPx() * radarWave),
           center = userPos
         )
-        drawCircle(UserBlue, radius = 6.dp.toPx(), center = userPos)
+        drawCircle(nodeUser, radius = 6.dp.toPx(), center = userPos)
         drawCircle(Color.White, radius = 2.5.dp.toPx(), center = userPos)
 
         // 5. Recommended Stop (Tongi College Gate / User Pickup Target)
         val recPos = Offset(w * 0.57f, h * 0.32f)
-        drawCircle(GoldAccent, radius = 8.dp.toPx(), center = recPos)
-        drawCircle(MaroonDeep, radius = 5.dp.toPx(), center = recPos)
+        drawCircle(goldCol, radius = 8.dp.toPx(), center = recPos)
+        drawCircle(recDotCol, radius = 5.dp.toPx(), center = recPos)
       }
 
-      // 2. Route Direction Capsule (Top-Left overlay matching image 2)
+      // 2. Route Direction Capsule (Top-Left overlay)
       Surface(
         shape = RoundedCornerShape(20.dp),
-        color = Color.White,
+        color = CardBg.copy(alpha = 0.95f),
         shadowElevation = 4.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
         modifier = Modifier
@@ -839,7 +877,7 @@ private fun BoardingTransitMapCard(
           Icon(
             imageVector = Icons.Default.LocationOn,
             contentDescription = null,
-            tint = MaroonDeep,
+            tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
             modifier = Modifier.size(15.dp)
           )
           Spacer(modifier = Modifier.width(4.dp))
@@ -852,7 +890,7 @@ private fun BoardingTransitMapCard(
         }
       }
 
-      // 3. Map Controls (Top-Right overlay: Recenter, +, - matching image 2)
+      // 3. Map Controls (Top-Right overlay: Recenter, +, -)
       Column(
         modifier = Modifier
           .padding(10.dp)
@@ -861,7 +899,7 @@ private fun BoardingTransitMapCard(
       ) {
         Surface(
           shape = CircleShape,
-          color = Color.White,
+          color = CardBg.copy(alpha = 0.95f),
           shadowElevation = 3.dp,
           border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
           modifier = Modifier.size(34.dp).clickable { onRecenter() }
@@ -870,7 +908,7 @@ private fun BoardingTransitMapCard(
             Icon(
               imageVector = Icons.Default.MyLocation,
               contentDescription = "Recenter",
-              tint = TextDark,
+              tint = if (isDark) Color(0xFFF8FAFC) else TextDark,
               modifier = Modifier.size(17.dp)
             )
           }
@@ -878,7 +916,7 @@ private fun BoardingTransitMapCard(
 
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color.White,
+          color = CardBg.copy(alpha = 0.95f),
           shadowElevation = 3.dp,
           border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor)
         ) {
@@ -892,7 +930,7 @@ private fun BoardingTransitMapCard(
               Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Zoom In",
-                tint = TextDark,
+                tint = if (isDark) Color(0xFFF8FAFC) else TextDark,
                 modifier = Modifier.size(18.dp)
               )
             }
@@ -911,7 +949,7 @@ private fun BoardingTransitMapCard(
               Icon(
                 imageVector = Icons.Default.Remove,
                 contentDescription = "Zoom Out",
-                tint = TextDark,
+                tint = if (isDark) Color(0xFFF8FAFC) else TextDark,
                 modifier = Modifier.size(18.dp)
               )
             }
@@ -924,7 +962,7 @@ private fun BoardingTransitMapCard(
         text = "Gazipura 27",
         fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
-        color = TextDark,
+        color = if (isDark) Color(0xFFE2E8F0) else TextDark,
         modifier = Modifier
           .align(Alignment.TopCenter)
           .padding(top = 18.dp, start = 70.dp)
@@ -933,7 +971,7 @@ private fun BoardingTransitMapCard(
         text = "Tongi",
         fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
-        color = MaroonDeep,
+        color = if (isDark) Color(0xFFEF4444) else MaroonDeep,
         modifier = Modifier
           .align(Alignment.Center)
           .padding(bottom = 60.dp, start = 50.dp)
@@ -942,16 +980,16 @@ private fun BoardingTransitMapCard(
         text = "Abdullahpur",
         fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
-        color = TextDark,
+        color = if (isDark) Color(0xFFE2E8F0) else TextDark,
         modifier = Modifier
           .align(Alignment.BottomEnd)
           .padding(bottom = 45.dp, end = 20.dp)
       )
 
-      // 5. Bottom-Left Map Legend (Matching exact legend in reference image 2)
+      // 5. Bottom-Left Map Legend
       Surface(
         shape = RoundedCornerShape(10.dp),
-        color = Color.White.copy(alpha = 0.94f),
+        color = CardBg.copy(alpha = 0.94f),
         border = androidx.compose.foundation.BorderStroke(0.5.dp, CardBorderColor),
         modifier = Modifier
           .align(Alignment.BottomStart)
@@ -961,12 +999,12 @@ private fun BoardingTransitMapCard(
           modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
           verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-          LegendRowItem(color = RouteGreen, isLine = true, label = "Bus route (completed)")
-          LegendRowItem(color = RouteRemaining, isLine = true, isDashed = true, label = "Bus route (remaining)")
-          LegendRowItem(color = MaroonDeep, isBus = true, label = "Bus (current location)")
-          LegendRowItem(color = RouteGreen, isDot = true, label = "Pickup point")
-          LegendRowItem(color = UserBlue, isDot = true, label = "Your location")
-          LegendRowItem(color = GoldAccent, isDiamond = true, label = "Recommended pickup")
+          LegendRowItem(color = if (isDark) Color(0xFF8B1D2C) else RouteGreen, isLine = true, label = "Bus route (completed)")
+          LegendRowItem(color = if (isDark) Color(0xFFE2C475) else RouteRemaining, isLine = true, isDashed = true, label = "Bus route (remaining)")
+          LegendRowItem(color = if (isDark) Color(0xFFDC2626) else MaroonDeep, isBus = true, label = "Bus (current location)")
+          LegendRowItem(color = if (isDark) Color(0xFF48C774) else RouteGreen, isDot = true, label = "Pickup point")
+          LegendRowItem(color = if (isDark) Color(0xFF1E88E5) else UserBlue, isDot = true, label = "Your location")
+          LegendRowItem(color = if (isDark) Color(0xFFEF4444) else GoldAccent, isDiamond = true, label = "Recommended pickup")
         }
       }
     }
@@ -1031,7 +1069,7 @@ private fun LegendRowItem(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 5. PROMINENT "FIND MY PICKUP POINT" BUTTON (Matching Image 2)
+// 5. PROMINENT "FIND MY PICKUP POINT" BUTTON (Matching Image 2 & Reference Image)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun FindMyPickupButton(
@@ -1039,16 +1077,29 @@ private fun FindMyPickupButton(
   onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Column(
     modifier = modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     Surface(
       shape = RoundedCornerShape(26.dp),
-      color = MaroonDeep,
-      shadowElevation = 5.dp,
+      color = Color.Transparent,
+      shadowElevation = if (isDark) 8.dp else 4.dp,
+      border = if (isDark) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B1E2F)) else null,
       modifier = Modifier
         .fillMaxWidth()
+        .background(
+          brush = if (isDark) {
+            Brush.horizontalGradient(
+              listOf(Color(0xFF6B1120), Color(0xFF4A0A14), Color(0xFF6B1120))
+            )
+          } else {
+            Brush.horizontalGradient(listOf(MaroonDeep, MaroonMid))
+          },
+          shape = RoundedCornerShape(26.dp)
+        )
         .clickable { onClick() }
         .testTag("find_my_pickup_button")
     ) {
@@ -1101,17 +1152,40 @@ private fun FindMyPickupButton(
     }
 
     Spacer(modifier = Modifier.height(6.dp))
-    Text(
-      text = "Allow location access to find the nearest pickup point.",
-      fontSize = 11.sp,
-      color = TextGrey,
-      textAlign = TextAlign.Center
-    )
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.Center
+    ) {
+      if (isDark) {
+        Box(
+          modifier = Modifier
+            .width(34.dp)
+            .height(1.dp)
+            .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF8B1E2F))))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+      }
+      Text(
+        text = "Allow location access to find the nearest pickup point.",
+        fontSize = 11.sp,
+        color = TextGrey,
+        textAlign = TextAlign.Center
+      )
+      if (isDark) {
+        Spacer(modifier = Modifier.width(8.dp))
+        Box(
+          modifier = Modifier
+            .width(34.dp)
+            .height(1.dp)
+            .background(Brush.horizontalGradient(listOf(Color(0xFF8B1E2F), Color.Transparent)))
+        )
+      }
+    }
   }
 }
 
 // -------------------------------------------------------------------------------------------------
-// 6. RECOMMENDED STOP CARD (Matching Image 2)
+// 6. RECOMMENDED STOP CARD (Matching Image 2 & Reference Image)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun RecommendedStopCard(
@@ -1119,11 +1193,13 @@ private fun RecommendedStopCard(
   onGetDirections: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Card(
     shape = RoundedCornerShape(18.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 4.dp else 2.dp),
     modifier = modifier
       .fillMaxWidth()
       .testTag("recommended_pickup_card")
@@ -1141,7 +1217,7 @@ private fun RecommendedStopCard(
           Icon(
             imageVector = Icons.Default.LocationOn,
             contentDescription = null,
-            tint = MaroonDeep,
+            tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
             modifier = Modifier.size(13.dp)
           )
           Spacer(modifier = Modifier.width(4.dp))
@@ -1149,7 +1225,7 @@ private fun RecommendedStopCard(
             text = "Recommended Pickup Point",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = MaroonDeep
+            color = if (isDark) Color(0xFFEF4444) else MaroonDeep
           )
         }
       }
@@ -1188,7 +1264,7 @@ private fun RecommendedStopCard(
               Icon(
                 imageVector = Icons.Default.LocationOn,
                 contentDescription = null,
-                tint = RouteRemaining,
+                tint = if (isDark) Color(0xFFEF4444) else RouteRemaining,
                 modifier = Modifier.size(13.dp)
               )
               Spacer(modifier = Modifier.width(3.dp))
@@ -1226,15 +1302,15 @@ private fun RecommendedStopCard(
         ) {
           Surface(
             shape = CircleShape,
-            color = Color(0xFFF7F4F0),
-            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
+            color = if (isDark) Color(0xFF1E0E14) else Color(0xFFF7F4F0),
+            border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF3D1520) else CardBorderColor),
             modifier = Modifier.size(42.dp)
           ) {
             Box(contentAlignment = Alignment.Center) {
               Icon(
                 imageVector = Icons.Default.Navigation,
                 contentDescription = "Get Directions",
-                tint = MaroonDeep,
+                tint = if (isDark) Color(0xFFF8FAFC) else MaroonDeep,
                 modifier = Modifier.size(20.dp)
               )
             }
@@ -1242,9 +1318,9 @@ private fun RecommendedStopCard(
           Spacer(modifier = Modifier.height(3.dp))
           Text(
             text = "Get Directions",
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextDark
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextGrey
           )
         }
       }
@@ -1253,7 +1329,7 @@ private fun RecommendedStopCard(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 7. BUS ARRIVAL ESTIMATE CARD (Matching Image 2)
+// 7. BUS ARRIVAL ESTIMATE CARD (Matching Image 2 & Reference Image)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun BusArrivalEstimateCard(
@@ -1261,11 +1337,13 @@ private fun BusArrivalEstimateCard(
   targetStop: BusStop,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Card(
     shape = RoundedCornerShape(18.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 4.dp else 2.dp),
     modifier = modifier
       .fillMaxWidth()
       .testTag("bus_arrival_estimate_card")
@@ -1280,14 +1358,14 @@ private fun BusArrivalEstimateCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
           Surface(
             shape = CircleShape,
-            color = MaroonDeep,
+            color = if (isDark) Color(0xFF260D14) else MaroonDeep,
             modifier = Modifier.size(26.dp)
           ) {
             Box(contentAlignment = Alignment.Center) {
               Icon(
                 imageVector = Icons.Default.DirectionsBus,
                 contentDescription = null,
-                tint = Color.White,
+                tint = if (isDark) Color(0xFFEF4444) else Color.White,
                 modifier = Modifier.size(15.dp)
               )
             }
@@ -1322,7 +1400,7 @@ private fun BusArrivalEstimateCard(
             text = "12 min",
             fontSize = 28.sp,
             fontWeight = FontWeight.Black,
-            color = MaroonDeep,
+            color = if (isDark) Color(0xFFF8FAFC) else MaroonDeep,
             lineHeight = 30.sp
           )
           Text(
@@ -1363,7 +1441,7 @@ private fun BusArrivalEstimateCard(
             Icon(
               imageVector = Icons.Default.LocationOn,
               contentDescription = null,
-              tint = RouteRemaining,
+              tint = if (isDark) Color(0xFFEF4444) else RouteRemaining,
               modifier = Modifier.size(12.dp)
             )
             Spacer(modifier = Modifier.width(3.dp))
@@ -1403,7 +1481,7 @@ private fun BusArrivalEstimateCard(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 8. 360° STREET VIEW CARD (Matching Image 2)
+// 8. 360° STREET VIEW CARD (Matching Image 2 & Reference Image)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun StreetView360Card(
@@ -1411,11 +1489,13 @@ private fun StreetView360Card(
   onViewPanorama: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Card(
     shape = RoundedCornerShape(18.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 4.dp else 2.dp),
     modifier = modifier
       .fillMaxWidth()
       .testTag("street_view_360_card")
@@ -1433,7 +1513,7 @@ private fun StreetView360Card(
           Icon(
             imageVector = Icons.Default.ViewInAr,
             contentDescription = null,
-            tint = MaroonDeep,
+            tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
             modifier = Modifier.size(13.dp)
           )
           Spacer(modifier = Modifier.width(4.dp))
@@ -1441,7 +1521,7 @@ private fun StreetView360Card(
             text = "360° VIEW",
             fontSize = 10.5.sp,
             fontWeight = FontWeight.Bold,
-            color = MaroonDeep
+            color = if (isDark) Color(0xFFEF4444) else MaroonDeep
           )
         }
       }
@@ -1514,8 +1594,17 @@ private fun StreetView360Card(
 
           Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaroonDeep,
+            color = Color.Transparent,
+            border = if (isDark) androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFF8B1E2F)) else null,
             modifier = Modifier
+              .background(
+                brush = if (isDark) {
+                  Brush.horizontalGradient(listOf(Color(0xFF6B1120), Color(0xFF4A0A14)))
+                } else {
+                  Brush.horizontalGradient(listOf(MaroonDeep, MaroonMid))
+                },
+                shape = RoundedCornerShape(16.dp)
+              )
               .clickable { onViewPanorama() }
               .testTag("btn_view_panorama")
           ) {
@@ -1552,7 +1641,7 @@ private fun StreetView360Card(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 9. OTHER STOPS ON THIS ROUTE (Matching Image 2)
+// 9. OTHER STOPS ON THIS ROUTE (Matching Image 2 & Reference Image)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun OtherStopsHorizontalSection(
@@ -1562,6 +1651,8 @@ private fun OtherStopsHorizontalSection(
   onViewAllClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Column(
     modifier = modifier.fillMaxWidth(),
     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1575,7 +1666,7 @@ private fun OtherStopsHorizontalSection(
         Icon(
           imageVector = Icons.Default.ShareLocation,
           contentDescription = null,
-          tint = MaroonDeep,
+          tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
           modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(6.dp))
@@ -1595,13 +1686,13 @@ private fun OtherStopsHorizontalSection(
         Text(
           text = "View all",
           fontSize = 11.5.sp,
-          color = MaroonDeep,
+          color = if (isDark) Color(0xFFEF4444) else MaroonDeep,
           fontWeight = FontWeight.Bold
         )
         Icon(
           imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
           contentDescription = null,
-          tint = MaroonDeep,
+          tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
           modifier = Modifier.size(16.dp)
         )
       }
@@ -1615,10 +1706,12 @@ private fun OtherStopsHorizontalSection(
         val isSelected = stop.id == selectedStopId
         Surface(
           shape = RoundedCornerShape(14.dp),
-          color = if (isSelected) MaroonDeep else Color.White,
+          color = if (isSelected) {
+            if (isDark) Color(0xFF4A0A14) else MaroonDeep
+          } else CardBg,
           border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (isSelected) MaroonDeep else CardBorderColor
+            if (isSelected) (if (isDark) Color(0xFF8B1E2F) else MaroonDeep) else CardBorderColor
           ),
           shadowElevation = if (isSelected) 3.dp else 1.dp,
           modifier = Modifier
@@ -1633,7 +1726,7 @@ private fun OtherStopsHorizontalSection(
               modifier = Modifier
                 .size(24.dp)
                 .background(
-                  if (isSelected) Color.White.copy(alpha = 0.2f) else Color(0xFFF7F4F0),
+                  if (isSelected) Color.White.copy(alpha = 0.2f) else SurfaceBg,
                   CircleShape
                 ),
               contentAlignment = Alignment.Center
@@ -1641,7 +1734,7 @@ private fun OtherStopsHorizontalSection(
               Icon(
                 imageVector = Icons.Default.LocationOn,
                 contentDescription = null,
-                tint = if (isSelected) Color.White else MaroonDeep,
+                tint = if (isSelected) Color.White else (if (isDark) Color(0xFFEF4444) else MaroonDeep),
                 modifier = Modifier.size(14.dp)
               )
             }
@@ -1676,18 +1769,20 @@ private fun OtherStopsHorizontalSection(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 10. LOCATION ACCESS BANNER (Matching Image 2)
+// 10. LOCATION ACCESS BANNER (Matching Image 2 & Reference Image)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun LocationAccessBanner(
   onAllowClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Card(
     shape = RoundedCornerShape(16.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 4.dp else 2.dp),
     modifier = modifier.fillMaxWidth()
   ) {
     Row(
@@ -1703,14 +1798,14 @@ private fun LocationAccessBanner(
       ) {
         Surface(
           shape = CircleShape,
-          color = Color(0xFFFDE8E8),
+          color = if (isDark) Color(0xFF260D14) else Color(0xFFFDE8E8),
           modifier = Modifier.size(30.dp)
         ) {
           Box(contentAlignment = Alignment.Center) {
             Icon(
               imageVector = Icons.Default.Info,
               contentDescription = null,
-              tint = MaroonDeep,
+              tint = if (isDark) Color(0xFFEF4444) else MaroonDeep,
               modifier = Modifier.size(16.dp)
             )
           }
@@ -1734,8 +1829,17 @@ private fun LocationAccessBanner(
 
       Surface(
         shape = RoundedCornerShape(14.dp),
-        color = MaroonDeep,
+        color = Color.Transparent,
+        border = if (isDark) androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFF8B1E2F)) else null,
         modifier = Modifier
+          .background(
+            brush = if (isDark) {
+              Brush.horizontalGradient(listOf(Color(0xFF7A1424), Color(0xFF560C17)))
+            } else {
+              Brush.horizontalGradient(listOf(MaroonDeep, MaroonMid))
+            },
+            shape = RoundedCornerShape(14.dp)
+          )
           .clickable { onAllowClick() }
           .padding(start = 6.dp)
           .testTag("btn_allow_location_banner")
@@ -1772,6 +1876,7 @@ private fun LiveCommunityChatCard(
   onSendMessage: (String, String) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
   var chatInput by remember { mutableStateOf("") }
   var selectedCategory by remember { mutableStateOf("All") }
 
@@ -1782,9 +1887,9 @@ private fun LiveCommunityChatCard(
 
   Card(
     shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
+    colors = CardDefaults.cardColors(containerColor = CardBg),
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 4.dp else 2.dp),
     modifier = modifier
       .fillMaxWidth()
       .testTag("live_community_chat_card")
@@ -1799,14 +1904,14 @@ private fun LiveCommunityChatCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
           Surface(
             shape = CircleShape,
-            color = MaroonDeep,
+            color = if (isDark) Color(0xFF260D14) else MaroonDeep,
             modifier = Modifier.size(28.dp)
           ) {
             Box(contentAlignment = Alignment.Center) {
               Icon(
                 imageVector = Icons.Default.ChatBubbleOutline,
                 contentDescription = null,
-                tint = Color.White,
+                tint = if (isDark) Color(0xFFEF4444) else Color.White,
                 modifier = Modifier.size(16.dp)
               )
             }
@@ -1829,7 +1934,7 @@ private fun LiveCommunityChatCard(
 
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = RouteGreen.copy(alpha = 0.12f)
+          color = RouteGreen.copy(alpha = if (isDark) 0.2f else 0.12f)
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1859,10 +1964,12 @@ private fun LiveCommunityChatCard(
           val isSel = selectedCategory == cat
           Surface(
             shape = RoundedCornerShape(12.dp),
-            color = if (isSel) MaroonDeep else Color(0xFFF7F4F0),
+            color = if (isSel) {
+              if (isDark) Color(0xFF6B1120) else MaroonDeep
+            } else SurfaceBg,
             border = androidx.compose.foundation.BorderStroke(
               0.5.dp,
-              if (isSel) MaroonDeep else CardBorderColor
+              if (isSel) (if (isDark) Color(0xFF8B1E2F) else MaroonDeep) else CardBorderColor
             ),
             modifier = Modifier.clickable { selectedCategory = cat }
           ) {
@@ -1885,7 +1992,7 @@ private fun LiveCommunityChatCard(
           .fillMaxWidth()
           .height(210.dp)
           .clip(RoundedCornerShape(12.dp))
-          .background(Color(0xFFF9F7F4))
+          .background(SurfaceBg)
           .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
@@ -1901,10 +2008,12 @@ private fun LiveCommunityChatCard(
                 bottomStart = if (msg.isMe) 12.dp else 2.dp,
                 bottomEnd = if (msg.isMe) 2.dp else 12.dp
               ),
-              color = if (msg.isMe) MaroonDeep else Color.White,
+              color = if (msg.isMe) {
+                if (isDark) Color(0xFF4A101C) else MaroonDeep
+              } else CardBg,
               border = androidx.compose.foundation.BorderStroke(
                 0.5.dp,
-                if (msg.isMe) MaroonDeep else CardBorderColor
+                if (msg.isMe) (if (isDark) Color(0xFF8B1E2F) else MaroonDeep) else CardBorderColor
               ),
               shadowElevation = 1.dp,
               modifier = Modifier.fillMaxWidth(0.92f)
@@ -1920,7 +2029,7 @@ private fun LiveCommunityChatCard(
                       text = if (msg.isMe) "${msg.senderName} (You)" else msg.senderName,
                       fontSize = 11.sp,
                       fontWeight = FontWeight.Bold,
-                      color = if (msg.isMe) GoldAccent else MaroonDeep
+                      color = if (msg.isMe) GoldAccent else (if (isDark) Color(0xFFEF4444) else MaroonDeep)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -1962,12 +2071,12 @@ private fun LiveCommunityChatCard(
           singleLine = true,
           shape = RoundedCornerShape(20.dp),
           colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaroonDeep,
+            focusedBorderColor = if (isDark) Color(0xFF8B1E2F) else MaroonDeep,
             unfocusedBorderColor = CardBorderColor,
             focusedTextColor = TextDark,
             unfocusedTextColor = TextDark,
-            focusedContainerColor = Color(0xFFFAF7F2),
-            unfocusedContainerColor = Color(0xFFFAF7F2)
+            focusedContainerColor = SurfaceBg,
+            unfocusedContainerColor = SurfaceBg
           ),
           modifier = Modifier
             .weight(1f)
@@ -1976,7 +2085,7 @@ private fun LiveCommunityChatCard(
         Spacer(modifier = Modifier.width(8.dp))
         Surface(
           shape = CircleShape,
-          color = MaroonDeep,
+          color = if (isDark) Color(0xFF6B1120) else MaroonDeep,
           shadowElevation = 3.dp,
           modifier = Modifier
             .size(44.dp)
@@ -2011,10 +2120,12 @@ private fun BoardingBottomNavigation(
   onNavigate: (AppScreen) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = SadaTheme.isDark
+
   Surface(
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-    color = Color.White,
-    shadowElevation = 12.dp,
+    color = CardBg,
+    shadowElevation = if (isDark) 16.dp else 12.dp,
     border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
     modifier = modifier.fillMaxWidth()
   ) {
@@ -2036,7 +2147,7 @@ private fun BoardingBottomNavigation(
         Icon(
           imageVector = Icons.Default.LocationOn,
           contentDescription = "Live Location",
-          tint = TextGrey,
+          tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
           modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(3.dp))
@@ -2044,23 +2155,28 @@ private fun BoardingBottomNavigation(
           text = "Live Location",
           fontSize = 11.sp,
           fontWeight = FontWeight.Medium,
-          color = TextGrey
+          color = if (isDark) Color(0xFF94A3B8) else TextGrey
         )
         Spacer(modifier = Modifier.height(7.dp))
       }
 
-      // 2. Center Boarding Tab (ACTIVE - Red elevated button matching image 2)
+      // 2. Center Boarding Tab (ACTIVE - Red elevated button matching reference)
       Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.testTag("boarding_nav_boarding_center")
       ) {
         Box(
           modifier = Modifier
-            .size(46.dp)
-            .shadow(4.dp, CircleShape)
+            .size(48.dp)
+            .shadow(if (isDark) 8.dp else 4.dp, CircleShape)
+            .border(
+              width = if (isDark) 2.dp else 1.5.dp,
+              color = if (isDark) Color(0xFFDC2626).copy(alpha = 0.85f) else Color.White,
+              shape = CircleShape
+            )
             .background(
               brush = Brush.verticalGradient(
-                colors = listOf(Color(0xFF560C17), Color(0xFF38050D))
+                colors = listOf(Color(0xFF7A1424), Color(0xFF4A0A14))
               ),
               shape = CircleShape
             ),
@@ -2078,7 +2194,7 @@ private fun BoardingBottomNavigation(
           text = "Boarding",
           fontSize = 11.sp,
           fontWeight = FontWeight.Bold,
-          color = RouteRemaining
+          color = if (isDark) Color(0xFFF8FAFC) else RouteRemaining
         )
         Spacer(modifier = Modifier.height(4.dp))
         // Red indicator pill underneath
@@ -2086,7 +2202,10 @@ private fun BoardingBottomNavigation(
           modifier = Modifier
             .width(26.dp)
             .height(3.dp)
-            .background(RouteRemaining, RoundedCornerShape(2.dp))
+            .background(
+              if (isDark) Color(0xFFDC2626) else RouteRemaining,
+              RoundedCornerShape(2.dp)
+            )
         )
       }
 
@@ -2101,7 +2220,7 @@ private fun BoardingBottomNavigation(
         Icon(
           imageVector = Icons.Default.BarChart,
           contentDescription = "Insights",
-          tint = TextGrey,
+          tint = if (isDark) Color(0xFF94A3B8) else TextGrey,
           modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(3.dp))
@@ -2109,7 +2228,7 @@ private fun BoardingBottomNavigation(
           text = "Insights",
           fontSize = 11.sp,
           fontWeight = FontWeight.Medium,
-          color = TextGrey
+          color = if (isDark) Color(0xFF94A3B8) else TextGrey
         )
         Spacer(modifier = Modifier.height(7.dp))
       }
@@ -2126,12 +2245,14 @@ private fun PanoramaPreviewDialog(
   onDismiss: () -> Unit,
   onOpenGoogleMaps: () -> Unit
 ) {
+  val isDark = SadaTheme.isDark
   var panOffset by remember { mutableFloatStateOf(0f) }
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = CardBg,
+      border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderColor),
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth()
@@ -2147,14 +2268,14 @@ private fun PanoramaPreviewDialog(
           Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
               shape = CircleShape,
-              color = MaroonDeep,
+              color = if (isDark) Color(0xFF260D14) else MaroonDeep,
               modifier = Modifier.size(28.dp)
             ) {
               Box(contentAlignment = Alignment.Center) {
                 Icon(
                   imageVector = Icons.Default.Panorama,
                   contentDescription = null,
-                  tint = Color.White,
+                  tint = if (isDark) Color(0xFFEF4444) else Color.White,
                   modifier = Modifier.size(16.dp)
                 )
               }
@@ -2238,7 +2359,9 @@ private fun PanoramaPreviewDialog(
             onDismiss()
             onOpenGoogleMaps()
           },
-          colors = ButtonDefaults.buttonColors(containerColor = MaroonDeep),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = if (isDark) Color(0xFF6B1120) else MaroonDeep
+          ),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {

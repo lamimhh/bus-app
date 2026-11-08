@@ -1,5 +1,6 @@
 package com.example.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.BusRepository
@@ -27,7 +28,7 @@ class BusViewModel(
   private val repository: BusRepository = BusRepository()
 ) : ViewModel() {
 
-  private val _currentScreen = MutableStateFlow(AppScreen.DASHBOARD)
+  private val _currentScreen = MutableStateFlow(AppScreen.SPLASH)
   val currentScreen: StateFlow<AppScreen> = _currentScreen.asStateFlow()
 
   private val _screenHistory = mutableListOf<AppScreen>()
@@ -37,6 +38,23 @@ class BusViewModel(
 
   private val _pickupSearchQuery = MutableStateFlow("")
   val pickupSearchQuery: StateFlow<String> = _pickupSearchQuery.asStateFlow()
+
+  private val _isDarkMode = MutableStateFlow(false)
+  val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
+
+  fun setDarkMode(enabled: Boolean, context: Context? = null) {
+    _isDarkMode.value = enabled
+    context?.getSharedPreferences("sada_shundori_prefs", Context.MODE_PRIVATE)?.edit()?.putBoolean("key_dark_mode", enabled)?.apply()
+  }
+
+  fun toggleDarkMode(context: Context? = null) {
+    setDarkMode(!_isDarkMode.value, context)
+  }
+
+  fun initTheme(context: Context) {
+    val prefs = context.getSharedPreferences("sada_shundori_prefs", Context.MODE_PRIVATE)
+    _isDarkMode.value = prefs.getBoolean("key_dark_mode", false)
+  }
 
   private val _selectedNoticeCategory = MutableStateFlow("All")
   val selectedNoticeCategory: StateFlow<String> = _selectedNoticeCategory.asStateFlow()

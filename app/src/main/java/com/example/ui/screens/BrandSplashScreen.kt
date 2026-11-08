@@ -66,6 +66,7 @@ import com.example.ui.theme.MaroonDeep
 import com.example.ui.theme.MaroonGlow
 import com.example.ui.theme.MaroonPrimary
 import com.example.ui.theme.OutlineDark
+import com.example.ui.theme.SadaTheme
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceElevated
 import com.example.ui.theme.TextMuted
@@ -92,7 +93,7 @@ fun BrandSplashScreen(
   Box(
     modifier = modifier
       .fillMaxSize()
-      .background(BackgroundDark)
+      .background(SadaTheme.colors.background)
   ) {
     Column(
       modifier = Modifier
