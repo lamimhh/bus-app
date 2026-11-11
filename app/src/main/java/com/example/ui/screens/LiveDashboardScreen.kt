@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import coil.compose.AsyncImage
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -140,6 +141,7 @@ fun LiveDashboardScreen(
   val isViewAllStopsOpen by viewModel.isViewAllStopsOpen.collectAsState()
   val isServiceUpdateSheetOpen by viewModel.isServiceUpdateSheetOpen.collectAsState()
   val mapZoom by viewModel.mapZoom.collectAsState()
+  val currentLanguage by viewModel.currentLanguage.collectAsState()
 
   val context = LocalContext.current
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -249,6 +251,7 @@ fun LiveDashboardScreen(
     SadaBottomNavigation(
       activeScreen = AppScreen.DASHBOARD,
       onNavigate = { screen -> viewModel.navigateTo(screen) },
+      language = currentLanguage,
       modifier = Modifier.align(Alignment.BottomCenter)
     )
 
@@ -389,15 +392,25 @@ private fun DashboardHeader(
         Box(
           modifier = Modifier
             .size(24.dp)
+            .clip(CircleShape)
             .background(Color(0xFFF3ECE6), CircleShape),
           contentAlignment = Alignment.Center
         ) {
-          Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Profile",
-            tint = BurgundyText,
-            modifier = Modifier.size(16.dp)
-          )
+          if (!userProfile.avatarUri.isNullOrBlank()) {
+            AsyncImage(
+              model = userProfile.avatarUri,
+              contentDescription = "Profile",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier.fillMaxSize()
+            )
+          } else {
+            Icon(
+              imageVector = Icons.Default.Person,
+              contentDescription = "Profile",
+              tint = BurgundyText,
+              modifier = Modifier.size(16.dp)
+            )
+          }
         }
         Spacer(modifier = Modifier.width(6.dp))
         Icon(

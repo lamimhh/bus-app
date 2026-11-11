@@ -56,6 +56,23 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import coil.compose.AsyncImage
+import com.example.model.AppLanguage
+import com.example.model.BusRuleItem
+import com.example.ui.util.AppStrings
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -127,6 +144,27 @@ fun ProfileScreen(
 ) {
   val context = LocalContext.current
   val userProfile by viewModel.userProfile.collectAsState()
+  val currentLanguage by viewModel.currentLanguage.collectAsState()
+
+  // Photo Picker launcher for immediate device image selection
+  val photoPickerLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.PickVisualMedia()
+  ) { uri: Uri? ->
+    if (uri != null) {
+      try {
+        context.contentResolver.takePersistableUriPermission(
+          uri,
+          Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+      } catch (_: Exception) {}
+      viewModel.updateAvatarUri(uri.toString(), context)
+      Toast.makeText(
+        context,
+        if (currentLanguage.isBangla) "প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!" else "Profile photo updated successfully!",
+        Toast.LENGTH_SHORT
+      ).show()
+    }
+  }
 
   // 1. Dark Mode toggle state bound to global persistent ThemeViewModel
   val isDarkMode by (themeViewModel?.isDarkMode ?: viewModel.isDarkMode).collectAsState()
@@ -151,6 +189,7 @@ fun ProfileScreen(
   var isSettingsSheetOpen by remember { mutableStateOf(false) }
   var isProblemReportOpen by remember { mutableStateOf(false) }
   var isHelpSearchOpen by remember { mutableStateOf(false) }
+  var isLanguageDialogOpen by remember { mutableStateOf(false) }
 
   Box(
     modifier = modifier
@@ -168,28 +207,33 @@ fun ProfileScreen(
         .padding(horizontal = 16.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-      // 1. TOP BAR: Brand Logo + Typography on left, Dark Mode Switch on right (Spec 1)
+      // 1. TOP BAR: Brand Logo + Typography on left, Primary Dark Mode Switch on right
       item {
         Spacer(modifier = Modifier.height(2.dp))
         ProfileTopBar(
           isDarkMode = isDarkMode,
+          language = currentLanguage,
           onDarkModeToggle = onThemeToggle
         )
       }
 
-      // 2. PROFILE CARD: User photo, name (Lamim), department, session (2022-23), Gmail as fixed non-editable fields (Spec 2)
+      // 2. PROFILE CARD: User profile picture beside name at top, directly clickable to upload/change photo
       item {
-        FixedProfileCard(
+        DynamicUserProfileCard(
           userProfile = userProfile,
-          onVerifyInfoClick = {
-            Toast.makeText(context, "Student profile verified by Dhaka College transport authority", Toast.LENGTH_SHORT).show()
+          language = currentLanguage,
+          onPhotoClick = {
+            photoPickerLauncher.launch(
+              PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
           }
         )
       }
 
-      // 3. BUS SERVICES: 4 Tiles -> Notice Box, Control Panel / Moderator (unrestricted), Complaint Box, Crew (Spec 3)
+      // 3. BUS SERVICES: 4 Tiles -> Notice Box, Control Panel, Complaint Box, Crew
       item {
         BusServicesSection(
+          language = currentLanguage,
           onNoticeClick = { viewModel.navigateTo(AppScreen.NOTICES) },
           onControlPanelClick = { isControlPanelModalOpen = true },
           onComplaintBoxClick = { viewModel.navigateTo(AppScreen.COMPLAINT_BOX) },
@@ -197,26 +241,38 @@ fun ProfileScreen(
         )
       }
 
-      // 4. COMMUNITY SECTION: Community and About tiles (Spec 4)
+      // 4. COMMUNITY SECTION: Community and About tiles
       item {
         CommunitySection(
+          language = currentLanguage,
           onCommunityClick = { viewModel.navigateTo(AppScreen.COMMUNITY) },
           onAboutClick = { isAboutModalOpen = true }
         )
       }
 
-      // 5. PREFERENCES & SETTINGS: Settings (with Help, Search, Report a Problem), Dark Mode toggle, no Home item (Spec 5)
+      // 5. PREFERENCES & SETTINGS: Settings, Language Switcher, Logout (Duplicate Dark Mode Removed)
       item {
         PreferencesSection(
-          isDarkMode = isDarkMode,
-          onDarkModeToggle = onThemeToggle,
-          onSettingsClick = { isSettingsSheetOpen = true }
+          language = currentLanguage,
+          onSettingsClick = { isSettingsSheetOpen = true },
+          onLanguageClick = { isLanguageDialogOpen = true },
+          onLogoutClick = {
+            viewModel.logout()
+            Toast.makeText(context, if (currentLanguage.isBangla) "লগ আউট সম্পন্ন হয়েছে" else "Logged out successfully", Toast.LENGTH_SHORT).show()
+          }
+        )
+      }
+
+      // 6. BUS RULES SECTION: Dedicated University Bus Rules directly below Settings
+      item {
+        BusRulesSection(
+          language = currentLanguage
         )
       }
 
       // Brand Footer
       item {
-        BrandFooter()
+        BrandFooter(language = currentLanguage)
       }
 
       // Extra space for the fixed "BACK TO HOME PAGE" button
@@ -225,7 +281,7 @@ fun ProfileScreen(
       }
     }
 
-    // 6. BOTTOM NAVIGATION REPLACEMENT: Single full-width digital button 'BACK TO HOME PAGE' (Spec 6)
+    // BOTTOM NAVIGATION REPLACEMENT: Single full-width digital button 'BACK TO HOME PAGE'
     val view = LocalView.current
     Surface(
       shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
@@ -257,28 +313,28 @@ fun ProfileScreen(
             .height(54.dp)
             .testTag("btn_back_to_home_page")
         ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.Center
-        ) {
-          Icon(
-            imageVector = Icons.Default.Home,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(20.dp)
-          )
-          Spacer(modifier = Modifier.width(10.dp))
-          Text(
-            text = "BACK TO HOME PAGE",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            color = Color.White
-          )
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Home,
+              contentDescription = null,
+              tint = Color.White,
+              modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+              text = AppStrings.backToHome(currentLanguage),
+              fontSize = 14.sp,
+              fontWeight = FontWeight.Bold,
+              letterSpacing = 1.sp,
+              color = Color.White
+            )
+          }
         }
       }
     }
-  }
 
     // SADA BUS CONTROL PANEL / MODERATOR MODAL (Unrestricted, showing admin & moderator details - Spec 3b)
     if (isControlPanelModalOpen) {
@@ -343,21 +399,39 @@ fun ProfileScreen(
       )
     }
 
-    // HELP & SEARCH FAQ DIALOG (Spec 5)
+    // HELP & SEARCH FAQ DIALOG
     if (isHelpSearchOpen) {
       HelpAndSearchDialog(
         onDismiss = { isHelpSearchOpen = false }
+      )
+    }
+
+    // LANGUAGE SELECTION DIALOG (Exactly two options: বাংলা and English)
+    if (isLanguageDialogOpen) {
+      LanguageSelectionDialog(
+        currentLanguage = currentLanguage,
+        onDismiss = { isLanguageDialogOpen = false },
+        onSelectLanguage = { selectedLang ->
+          viewModel.setLanguage(selectedLang, context)
+          isLanguageDialogOpen = false
+          Toast.makeText(
+            context,
+            if (selectedLang.isBangla) "ভাষা পরিবর্তন করা হয়েছে: বাংলা" else "Language switched to English",
+            Toast.LENGTH_SHORT
+          ).show()
+        }
       )
     }
   }
 }
 
 // -------------------------------------------------------------------------------------------------
-// 1. TOP BAR (Dark Mode toggle switch instead of profile button - Spec 1)
+// 1. TOP BAR (Dark Mode toggle switch instead of profile button)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun ProfileTopBar(
   isDarkMode: Boolean,
+  language: AppLanguage,
   onDarkModeToggle: (Boolean) -> Unit,
   modifier: Modifier = Modifier
 ) {
@@ -379,31 +453,50 @@ private fun ProfileTopBar(
       )
       Spacer(modifier = Modifier.width(10.dp))
       Column {
-        Text(
-          text = "SADA",
-          fontFamily = FontFamily.Serif,
-          fontSize = 15.sp,
-          fontWeight = FontWeight.Bold,
-          letterSpacing = 2.sp,
-          color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
-          lineHeight = 16.sp
-        )
-        Text(
-          text = "SHUNDORI",
-          fontFamily = FontFamily.Serif,
-          fontSize = 17.sp,
-          fontWeight = FontWeight.Black,
-          letterSpacing = 2.5.sp,
-          color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
-          lineHeight = 18.sp
-        )
-        Text(
-          text = "LIVE BUS COMPANION",
-          fontSize = 8.5.sp,
-          fontWeight = FontWeight.Bold,
-          letterSpacing = 1.2.sp,
-          color = if (isDarkMode) Color(0xFFCBD5E1) else TextGrey
-        )
+        if (language.isBangla) {
+          Text(
+            text = "সাদা সুন্দরী",
+            fontFamily = FontFamily.Serif,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
+            lineHeight = 18.sp
+          )
+          Text(
+            text = "লাইভ বাস কম্প্যানিয়ন",
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
+            color = if (isDarkMode) Color(0xFFCBD5E1) else TextGrey
+          )
+        } else {
+          Text(
+            text = "SADA",
+            fontFamily = FontFamily.Serif,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
+            lineHeight = 16.sp
+          )
+          Text(
+            text = "SHUNDORI",
+            fontFamily = FontFamily.Serif,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 2.5.sp,
+            color = if (isDarkMode) Color(0xFFF8FAFC) else MaroonDeep,
+            lineHeight = 18.sp
+          )
+          Text(
+            text = "LIVE BUS COMPANION",
+            fontSize = 8.5.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.2.sp,
+            color = if (isDarkMode) Color(0xFFCBD5E1) else TextGrey
+          )
+        }
       }
     }
 
@@ -443,12 +536,13 @@ private fun ProfileTopBar(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 2. FIXED PROFILE CARD (Non-editable verified fields - Spec 2)
+// 2. DYNAMIC USER PROFILE CARD (Dynamic Account Sync & Direct Clickable Photo Upload)
 // -------------------------------------------------------------------------------------------------
 @Composable
-private fun FixedProfileCard(
+private fun DynamicUserProfileCard(
   userProfile: UserProfile,
-  onVerifyInfoClick: () -> Unit,
+  language: AppLanguage,
+  onPhotoClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   val isDark = SadaTheme.isDark
@@ -466,152 +560,179 @@ private fun FixedProfileCard(
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     modifier = modifier
       .fillMaxWidth()
-      .testTag("fixed_profile_card")
+      .testTag("dynamic_profile_card")
   ) {
     Column(modifier = Modifier.padding(18.dp)) {
       Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // User Photo with Maroon Ring & Live Verified Indicator Dot
+        // User Profile Picture directly beside Name at top, directly clickable to pick from device
         Box(
-          modifier = Modifier.size(80.dp),
+          modifier = Modifier
+            .size(84.dp)
+            .clip(CircleShape)
+            .clickable { onPhotoClick() }
+            .testTag("btn_change_profile_photo"),
           contentAlignment = Alignment.Center
         ) {
-          // Circular avatar container
           Surface(
             shape = CircleShape,
             color = tileBg,
-            border = androidx.compose.foundation.BorderStroke(2.dp, accentColor),
-            modifier = Modifier.size(76.dp)
+            border = androidx.compose.foundation.BorderStroke(2.5.dp, accentColor),
+            modifier = Modifier.size(78.dp)
           ) {
-            Image(
-              painter = painterResource(id = R.drawable.sada_shundori_icon),
-              contentDescription = "User Photo",
-              contentScale = ContentScale.Crop,
-              modifier = Modifier.fillMaxSize()
-            )
+            if (!userProfile.avatarUri.isNullOrBlank()) {
+              AsyncImage(
+                model = userProfile.avatarUri,
+                contentDescription = "User Avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+              )
+            } else {
+              Image(
+                painter = painterResource(id = R.drawable.sada_shundori_icon),
+                contentDescription = "User Avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+              )
+            }
           }
 
-          // Small maroon dot on right side as in 5_3f4a0c72.jpeg
-          Box(
+          // Camera Edit overlay badge at bottom-right
+          Surface(
+            shape = CircleShape,
+            color = accentColor,
+            shadowElevation = 3.dp,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, cardBg),
             modifier = Modifier
-              .align(Alignment.CenterEnd)
-              .size(10.dp)
-              .clip(CircleShape)
-              .background(accentColor)
-              .border(1.5.dp, cardBg, CircleShape)
-          )
+              .align(Alignment.BottomEnd)
+              .size(26.dp)
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = "Change Photo",
+                tint = Color.White,
+                modifier = Modifier.size(13.dp)
+              )
+            }
+          }
         }
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Fixed Non-editable User Fields (Spec 2)
+        // Dynamic User Details directly connected to the active account
         Column(modifier = Modifier.weight(1f)) {
-          // Name: Lamim
+          // Display Name
           Text(
-            text = userProfile.name, // "Lamim"
-            fontSize = 22.sp,
+            text = userProfile.fullName.ifBlank { userProfile.name },
+            fontSize = 19.sp,
             fontWeight = FontWeight.Bold,
-            color = textPrimary
+            color = textPrimary,
+            lineHeight = 22.sp,
+            maxLines = 1
           )
 
           Spacer(modifier = Modifier.height(4.dp))
 
-          // Department: Finance & Banking
+          // Department & College
           Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
               imageVector = Icons.Default.School,
               contentDescription = null,
               tint = accentColor,
-              modifier = Modifier.size(15.dp)
+              modifier = Modifier.size(14.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = userProfile.department, // "Finance & Banking"
-              fontSize = 13.sp,
+              text = "${userProfile.department} • ${userProfile.college}",
+              fontSize = 12.5.sp,
               fontWeight = FontWeight.Medium,
-              color = textPrimary
+              color = textPrimary,
+              maxLines = 1
             )
           }
 
           Spacer(modifier = Modifier.height(3.dp))
 
-          // Session: Session 2022–23
+          // Session & Student ID
           Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
               imageVector = Icons.Default.DateRange,
               contentDescription = null,
               tint = textSecondary,
-              modifier = Modifier.size(15.dp)
+              modifier = Modifier.size(14.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "Session ${userProfile.session}", // "Session 2022-23"
-              fontSize = 12.5.sp,
-              color = textSecondary
+              text = "${AppStrings.sessionLabel(language)} ${userProfile.session} • ID: ${userProfile.studentId}",
+              fontSize = 12.sp,
+              color = textSecondary,
+              maxLines = 1
             )
           }
 
           Spacer(modifier = Modifier.height(3.dp))
 
-          // Gmail Account
+          // Email Address
           Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
               imageVector = Icons.Default.Email,
               contentDescription = null,
               tint = textSecondary,
-              modifier = Modifier.size(15.dp)
+              modifier = Modifier.size(14.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = userProfile.email, // "hafizhossainlamim@gmail.com"
+              text = userProfile.email,
               fontSize = 11.5.sp,
-              color = textSecondary
+              color = textSecondary,
+              maxLines = 1
             )
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(14.dp))
+      Spacer(modifier = Modifier.height(10.dp))
 
-      // Verified Badge Pill (Indicating non-editable verified credentials)
+      // Direct Clickable Prompt Bar for Photo Upload
       Surface(
         shape = RoundedCornerShape(12.dp),
         color = tileBg,
         border = androidx.compose.foundation.BorderStroke(0.8.dp, cardBorder),
         modifier = Modifier
           .fillMaxWidth()
-          .clickable { onVerifyInfoClick() }
+          .clickable { onPhotoClick() }
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
           Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-              imageVector = Icons.Default.Verified,
+              imageVector = Icons.Default.PhotoCamera,
               contentDescription = null,
-              tint = if (isDark) Color(0xFFF87171) else MaroonDeep,
-              modifier = Modifier.size(16.dp)
+              tint = accentColor,
+              modifier = Modifier.size(15.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-              text = "Verified Student Pass • DU 7 Colleges",
+              text = AppStrings.tapToChangePhoto(language),
               fontSize = 11.5.sp,
-              fontWeight = FontWeight.Bold,
-              color = if (isDark) Color(0xFFF87171) else MaroonDeep
+              fontWeight = FontWeight.Medium,
+              color = accentColor
             )
           }
 
           Surface(
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(6.dp),
             color = cardBg,
             border = androidx.compose.foundation.BorderStroke(0.5.dp, cardBorder)
           ) {
             Text(
-              text = "Fixed ID",
+              text = if (language.isBangla) "আপলোড" else "Upload",
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold,
               color = textSecondary,
@@ -625,10 +746,11 @@ private fun FixedProfileCard(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 3. BUS SERVICES (4 TILES: Notice Box, Control Panel / Moderator, Complaint Box, Crew - Spec 3)
+// 3. BUS SERVICES (4 TILES: Notice Box, Control Panel, Complaint Box, Crew)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun BusServicesSection(
+  language: AppLanguage,
   onNoticeClick: () -> Unit,
   onControlPanelClick: () -> Unit,
   onComplaintBoxClick: () -> Unit,
@@ -636,15 +758,14 @@ private fun BusServicesSection(
   modifier: Modifier = Modifier
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
-    // Section Header: Bus icon + BUS SERVICES title + Maroon underline
+    // Section Header
     SectionHeader(
       icon = Icons.Default.DirectionsBus,
-      title = "BUS SERVICES"
+      title = AppStrings.busServicesTitle(language)
     )
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    // Card with 4 Tile rows matching 5_3f4a0c72.jpeg
     val isDark = SadaTheme.isDark
     val cardBg = if (isDark) Color(0xFF240D12) else Color.White
     val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
@@ -661,8 +782,8 @@ private fun BusServicesSection(
         // Tile 1: Notice Box
         ProfileTileItem(
           icon = Icons.Outlined.Notifications,
-          title = "Notice",
-          subtitle = "Official announcements & updates",
+          title = AppStrings.noticeBoardTitle(language),
+          subtitle = AppStrings.noticeBoardSub(language),
           badgeCount = "3",
           onClick = onNoticeClick,
           testTag = "tile_notice_box"
@@ -670,12 +791,12 @@ private fun BusServicesSection(
 
         Divider(color = dividerCol, thickness = 0.8.dp)
 
-        // Tile 2: Sada Bus Control Panel / Moderator (Unrestricted - Spec 3b)
+        // Tile 2: Sada Bus Control Panel / Moderator
         ProfileTileItem(
           icon = Icons.Default.AdminPanelSettings,
-          title = "Moderator",
-          subtitle = "Management panel & moderators",
-          rightLabel = "Open Access",
+          title = AppStrings.controlPanelTitle(language),
+          subtitle = AppStrings.controlPanelSub(language),
+          rightLabel = if (language.isBangla) "উন্মুক্ত" else "Open",
           onClick = onControlPanelClick,
           testTag = "tile_moderator_panel"
         )
@@ -685,8 +806,8 @@ private fun BusServicesSection(
         // Tile 3: Complaint Box
         ProfileTileItem(
           icon = Icons.Default.ChatBubbleOutline,
-          title = "Complaint Box",
-          subtitle = "Report issues & give feedback",
+          title = AppStrings.complaintBoxTitle(language),
+          subtitle = AppStrings.complaintBoxSub(language),
           onClick = onComplaintBoxClick,
           testTag = "tile_complaint_box"
         )
@@ -696,8 +817,8 @@ private fun BusServicesSection(
         // Tile 4: Crew
         ProfileTileItem(
           icon = Icons.Default.DirectionsBus,
-          title = "Crew",
-          subtitle = "Meet the Sada Shundori crew",
+          title = AppStrings.crewTitle(language),
+          subtitle = AppStrings.crewSub(language),
           onClick = onCrewClick,
           testTag = "tile_crew_details"
         )
@@ -707,10 +828,11 @@ private fun BusServicesSection(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 4. COMMUNITY SECTION (Community & About tiles - Spec 4)
+// 4. COMMUNITY SECTION (Community & About tiles)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun CommunitySection(
+  language: AppLanguage,
   onCommunityClick: () -> Unit,
   onAboutClick: () -> Unit,
   modifier: Modifier = Modifier
@@ -724,7 +846,7 @@ private fun CommunitySection(
     // Section Header
     SectionHeader(
       icon = Icons.Default.Groups,
-      title = "COMMUNITY"
+      title = AppStrings.communityTitle(language)
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -740,8 +862,8 @@ private fun CommunitySection(
         // Tile 1: Community
         ProfileTileItem(
           icon = Icons.Outlined.Group,
-          title = "Community",
-          subtitle = "Join our passenger community",
+          title = AppStrings.officialCommunityTitle(language),
+          subtitle = AppStrings.officialCommunitySub(language),
           onClick = onCommunityClick,
           testTag = "tile_community"
         )
@@ -751,8 +873,8 @@ private fun CommunitySection(
         // Tile 2: About
         ProfileTileItem(
           icon = Icons.Outlined.Info,
-          title = "About",
-          subtitle = "About Sada Shundori initiative",
+          title = AppStrings.aboutTitle(language),
+          subtitle = AppStrings.aboutSub(language),
           onClick = onAboutClick,
           testTag = "tile_about"
         )
@@ -762,29 +884,26 @@ private fun CommunitySection(
 }
 
 // -------------------------------------------------------------------------------------------------
-// 5. PREFERENCES SECTION (Settings, Dark Mode, without redundant Home item - Spec 5)
+// 5. PREFERENCES & SETTINGS SECTION (Settings, Language, Logout - Duplicate Dark Mode Removed)
 // -------------------------------------------------------------------------------------------------
 @Composable
 private fun PreferencesSection(
-  isDarkMode: Boolean,
-  onDarkModeToggle: (Boolean) -> Unit,
+  language: AppLanguage,
   onSettingsClick: () -> Unit,
+  onLanguageClick: () -> Unit,
+  onLogoutClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   val isDark = SadaTheme.isDark
   val cardBg = if (isDark) Color(0xFF240D12) else Color.White
   val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
   val dividerCol = if (isDark) Color(0xFF35151D) else CardBorderColor
-  val tileBg = if (isDark) Color(0xFF38131B) else TileIconBg
-  val iconTint = if (isDark) Color(0xFFEF4444) else MaroonDeep
-  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
-  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
 
   Column(modifier = modifier.fillMaxWidth()) {
     // Section Header
     SectionHeader(
       icon = Icons.Default.Settings,
-      title = "PREFERENCES"
+      title = AppStrings.preferencesTitle(language)
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -797,69 +916,359 @@ private fun PreferencesSection(
       modifier = Modifier.fillMaxWidth()
     ) {
       Column {
-        // Tile 1: Settings (Opens sheet with Help, Search, Report a Problem - Spec 5)
+        // Tile 1: Settings (Opens sheet with Help, Search, Report a Problem)
         ProfileTileItem(
           icon = Icons.Default.Settings,
-          title = "Settings",
-          subtitle = "Account & app preferences",
+          title = AppStrings.settingsTileTitle(language),
+          subtitle = AppStrings.settingsTileSub(language),
           onClick = onSettingsClick,
           testTag = "tile_preferences_settings"
         )
 
         Divider(color = dividerCol, thickness = 0.8.dp)
 
-        // Tile 2: Dark Mode Row with inline Switch component (Spec 5)
+        // Tile 2: App Language Switcher
+        ProfileTileItem(
+          icon = Icons.Default.Language,
+          title = AppStrings.languageTileTitle(language),
+          subtitle = if (language.isBangla) "বর্তমান: বাংলা (ট্যাপ করে পরিবর্তন করুন)" else "Current: English (Tap to switch)",
+          rightLabel = if (language.isBangla) "বাংলা" else "EN",
+          onClick = onLanguageClick,
+          testTag = "tile_preferences_language"
+        )
+
+        Divider(color = dividerCol, thickness = 0.8.dp)
+
+        // Tile 3: Log Out
+        ProfileTileItem(
+          icon = Icons.Default.ExitToApp,
+          title = AppStrings.logoutTitle(language),
+          subtitle = AppStrings.logoutSub(language),
+          onClick = onLogoutClick,
+          testTag = "tile_preferences_logout"
+        )
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// 6. BUS RULES SECTION (Dedicated University Bus Rules in Bangla directly below Settings)
+// -------------------------------------------------------------------------------------------------
+@Composable
+private fun BusRulesSection(
+  language: AppLanguage,
+  modifier: Modifier = Modifier
+) {
+  val isDark = SadaTheme.isDark
+  val cardBg = if (isDark) Color(0xFF240D12) else Color.White
+  val cardBorder = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val accentColor = if (isDark) Color(0xFFEF4444) else MaroonDeep
+  val dividerCol = if (isDark) Color(0xFF35151D) else CardBorderColor
+
+  var expandedRuleId by remember { mutableStateOf<Int?>(1) }
+
+  Column(modifier = modifier.fillMaxWidth()) {
+    // Section Header
+    SectionHeader(
+      icon = Icons.Default.Gavel,
+      title = AppStrings.busRulesTitle(language)
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Card(
+      shape = RoundedCornerShape(22.dp),
+      colors = CardDefaults.cardColors(containerColor = cardBg),
+      border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder),
+      elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+      modifier = Modifier
+        .fillMaxWidth()
+        .testTag("bus_rules_card")
+    ) {
+      Column(modifier = Modifier.padding(16.dp)) {
+        // Explanatory Subtitle
         Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onDarkModeToggle(!isDarkMode) }
-            .padding(horizontal = 16.dp, vertical = 14.dp)
-            .testTag("tile_dark_mode_row"),
+          modifier = Modifier.fillMaxWidth(),
           verticalAlignment = Alignment.CenterVertically
         ) {
           Surface(
             shape = CircleShape,
-            color = tileBg,
-            modifier = Modifier.size(42.dp)
+            color = if (isDark) Color(0xFF38131B) else TileIconBg,
+            modifier = Modifier.size(36.dp)
           ) {
             Box(contentAlignment = Alignment.Center) {
               Icon(
-                imageVector = Icons.Default.DarkMode,
+                imageVector = Icons.Default.MenuBook,
                 contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(20.dp)
+                tint = accentColor,
+                modifier = Modifier.size(18.dp)
               )
             }
           }
-
-          Spacer(modifier = Modifier.width(14.dp))
-
+          Spacer(modifier = Modifier.width(12.dp))
           Column(modifier = Modifier.weight(1f)) {
             Text(
-              text = "Dark Mode",
-              fontSize = 15.sp,
+              text = if (language.isBangla) "ঢাকা বিশ্ববিদ্যালয় অধিভুক্ত ৭ কলেজ" else "DU Affiliated 7 Colleges",
+              fontSize = 13.sp,
               fontWeight = FontWeight.Bold,
               color = textPrimary
             )
             Text(
-              text = "Switch between light & dark theme",
-              fontSize = 12.sp,
+              text = AppStrings.busRulesSubtitle(language),
+              fontSize = 11.5.sp,
               color = textSecondary
             )
           }
+        }
 
-          Switch(
-            checked = isDarkMode,
-            onCheckedChange = onDarkModeToggle,
-            colors = SwitchDefaults.colors(
-              checkedThumbColor = Color.White,
-              checkedTrackColor = if (isDarkMode) Color(0xFFEF4444) else MaroonDeep,
-              uncheckedThumbColor = TextGrey,
-              uncheckedTrackColor = if (isDarkMode) Color(0xFF38131B) else Color(0xFFEDE4DC)
-            )
-          )
+        Spacer(modifier = Modifier.height(14.dp))
+        Divider(color = dividerCol, thickness = 0.8.dp)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 8 University Bus Rules
+        AppStrings.officialBusRules.forEachIndexed { index, rule ->
+          val isExpanded = expandedRuleId == rule.id
+
+          Column(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(12.dp))
+              .clickable {
+                expandedRuleId = if (isExpanded) null else rule.id
+              }
+              .padding(vertical = 8.dp, horizontal = 4.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              // Rule Category Badge
+              Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = if (isDark) Color(0xFF38131B) else BadgeBg,
+                border = androidx.compose.foundation.BorderStroke(0.6.dp, if (isDark) Color(0xFF4A1822) else Color(0xFFE2D0D0))
+              ) {
+                Text(
+                  text = if (language.isBangla) rule.categoryBn else rule.categoryEn,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (isDark) Color(0xFFEF4444) else MaroonDeep,
+                  modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                )
+              }
+
+              Spacer(modifier = Modifier.width(10.dp))
+
+              // Rule Title
+              Text(
+                text = if (language.isBangla) rule.titleBn else rule.titleEn,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = textPrimary,
+                modifier = Modifier.weight(1f)
+              )
+
+              Icon(
+                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                tint = textSecondary,
+                modifier = Modifier.size(20.dp)
+              )
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+              Column(modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp)) {
+                Text(
+                  text = if (language.isBangla) rule.descBn else rule.descEn,
+                  fontSize = 12.5.sp,
+                  lineHeight = 19.sp,
+                  color = textSecondary
+                )
+              }
+            }
+          }
+
+          if (index < AppStrings.officialBusRules.size - 1) {
+            Divider(color = dividerCol.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(vertical = 2.dp))
+          }
         }
       }
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// 7. LANGUAGE SELECTION DIALOG (Exactly two options: বাংলা and English)
+// -------------------------------------------------------------------------------------------------
+@Composable
+private fun LanguageSelectionDialog(
+  currentLanguage: AppLanguage,
+  onDismiss: () -> Unit,
+  onSelectLanguage: (AppLanguage) -> Unit
+) {
+  val isDark = SadaTheme.isDark
+  val dialogBg = if (isDark) Color(0xFF1E0B10) else Color.White
+  val borderCol = if (isDark) Color(0xFF4A1E26) else CardBorderColor
+  val textPrimary = if (isDark) Color(0xFFF8FAFC) else TextDark
+  val textSecondary = if (isDark) Color(0xFFCBD5E1) else TextGrey
+  val accentColor = if (isDark) Color(0xFFEF4444) else MaroonDeep
+
+  Dialog(onDismissRequest = onDismiss) {
+    Surface(
+      shape = RoundedCornerShape(20.dp),
+      color = dialogBg,
+      border = androidx.compose.foundation.BorderStroke(1.dp, borderCol),
+      shadowElevation = 16.dp,
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+        .testTag("dialog_language_selection")
+    ) {
+      Column(modifier = Modifier.padding(20.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+              imageVector = Icons.Default.Language,
+              contentDescription = null,
+              tint = accentColor,
+              modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+              text = if (currentLanguage.isBangla) "ভাষা নির্বাচন করুন" else "Select Language",
+              fontSize = 17.sp,
+              fontWeight = FontWeight.Bold,
+              color = textPrimary
+            )
+          }
+
+          Icon(
+            imageVector = Icons.Default.Close,
+            contentDescription = "Close",
+            tint = textSecondary,
+            modifier = Modifier
+              .size(20.dp)
+              .clickable { onDismiss() }
+          )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+          text = if (currentLanguage.isBangla) "অ্যাপের সম্পূর্ণ ইন্টারফেসের ভাষা তাৎক্ষণিক পরিবর্তন করুন" else "Switch application-wide interface language instantly",
+          fontSize = 12.sp,
+          color = textSecondary
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // Option 1: বাংলা (Bangla)
+        LanguageOptionCard(
+          title = "বাংলা (Bangla)",
+          subtitle = "জাতীয় ও ক্যাম্পাস ভাষা",
+          isSelected = currentLanguage == AppLanguage.BANGLA,
+          accentColor = accentColor,
+          textColor = textPrimary,
+          onClick = { onSelectLanguage(AppLanguage.BANGLA) },
+          testTag = "lang_opt_bangla"
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Option 2: English
+        LanguageOptionCard(
+          title = "English",
+          subtitle = "International & standard UI",
+          isSelected = currentLanguage == AppLanguage.ENGLISH,
+          accentColor = accentColor,
+          textColor = textPrimary,
+          onClick = { onSelectLanguage(AppLanguage.ENGLISH) },
+          testTag = "lang_opt_english"
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.End
+        ) {
+          TextButton(onClick = onDismiss) {
+            Text(
+              text = if (currentLanguage.isBangla) "বাতিল" else "Cancel",
+              color = textSecondary,
+              fontWeight = FontWeight.Medium
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun LanguageOptionCard(
+  title: String,
+  subtitle: String,
+  isSelected: Boolean,
+  accentColor: Color,
+  textColor: Color,
+  onClick: () -> Unit,
+  testTag: String
+) {
+  val isDark = SadaTheme.isDark
+  val cardBg = if (isSelected) {
+    if (isDark) Color(0xFF38131B) else Color(0xFFFBECEC)
+  } else {
+    if (isDark) Color(0xFF14080C) else Color(0xFFF8F5F0)
+  }
+  val borderStroke = if (isSelected) {
+    androidx.compose.foundation.BorderStroke(1.5.dp, accentColor)
+  } else {
+    androidx.compose.foundation.BorderStroke(1.dp, if (isDark) Color(0xFF301018) else Color(0xFFEADBCE))
+  }
+
+  Surface(
+    shape = RoundedCornerShape(14.dp),
+    color = cardBg,
+    border = borderStroke,
+    modifier = Modifier
+      .fillMaxWidth()
+      .clickable { onClick() }
+      .testTag(testTag)
+  ) {
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 14.dp, vertical = 12.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = title,
+          fontSize = 15.sp,
+          fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+          color = textColor
+        )
+        Text(
+          text = subtitle,
+          fontSize = 11.5.sp,
+          color = if (isDark) Color(0xFF94A3B8) else TextGrey
+        )
+      }
+
+      Icon(
+        imageVector = if (isSelected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+        contentDescription = null,
+        tint = if (isSelected) accentColor else if (isDark) Color(0xFF64748B) else TextGrey,
+        modifier = Modifier.size(20.dp)
+      )
     }
   }
 }
@@ -1020,7 +1429,10 @@ private fun ProfileTileItem(
 // BRAND FOOTER (SAFE • RELIABLE • TOGETHER)
 // -------------------------------------------------------------------------------------------------
 @Composable
-private fun BrandFooter(modifier: Modifier = Modifier) {
+private fun BrandFooter(
+  modifier: Modifier = Modifier,
+  language: AppLanguage = AppLanguage.BANGLA
+) {
   val isDark = SadaTheme.isDark
   Column(
     modifier = modifier
@@ -1036,7 +1448,7 @@ private fun BrandFooter(modifier: Modifier = Modifier) {
     ) {
       Box(contentAlignment = Alignment.Center) {
         Text(
-          text = "S",
+          text = if (language.isBangla) "স" else "S",
           fontFamily = FontFamily.Serif,
           fontSize = 16.sp,
           fontWeight = FontWeight.Black,
@@ -1046,7 +1458,7 @@ private fun BrandFooter(modifier: Modifier = Modifier) {
     }
     Spacer(modifier = Modifier.height(6.dp))
     Text(
-      text = "SAFE  •  RELIABLE  •  TOGETHER",
+      text = if (language.isBangla) "নিরাপদ  •  নির্ভরযোগ্য  •  ঐক্যবদ্ধ" else "SAFE  •  RELIABLE  •  TOGETHER",
       fontSize = 9.sp,
       fontWeight = FontWeight.Bold,
       letterSpacing = 1.2.sp,
@@ -1054,7 +1466,7 @@ private fun BrandFooter(modifier: Modifier = Modifier) {
     )
     Spacer(modifier = Modifier.height(2.dp))
     Text(
-      text = "Thank you for being with Sada Shundori ❤️",
+      text = if (language.isBangla) "সাদা সুন্দরীর সাথে থাকার জন্য ধন্যবাদ ❤️" else "Thank you for being with Sada Shundori ❤️",
       fontSize = 11.sp,
       color = if (isDark) Color(0xFF94A3B8) else TextGrey
     )

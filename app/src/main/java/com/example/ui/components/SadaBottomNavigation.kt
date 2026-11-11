@@ -60,7 +60,8 @@ import com.example.ui.util.HapticType
 fun SadaBottomNavigation(
   activeScreen: AppScreen,
   onNavigate: (AppScreen) -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
+  language: com.example.model.AppLanguage = com.example.model.AppLanguage.BANGLA
 ) {
   val isDark = SadaTheme.isDark
   val colors = SadaTheme.colors
@@ -95,7 +96,7 @@ fun SadaBottomNavigation(
         // 1. LIVE LOCATION (Standardized Tab 1)
         NavigationTabItem(
           icon = Icons.Default.LocationOn,
-          label = "Live Location",
+          label = com.example.ui.util.AppStrings.navLiveLocation(language),
           isSelected = activeScreen == AppScreen.DASHBOARD,
           activeColor = activeColor,
           inactiveColor = inactiveColor,
@@ -113,7 +114,7 @@ fun SadaBottomNavigation(
         // 2. BOARDING (Standardized Center Elevated Button)
         CenterBoardingTabItem(
           icon = Icons.Default.DirectionsBus,
-          label = "Boarding",
+          label = com.example.ui.util.AppStrings.navBoarding(language),
           isSelected = activeScreen == AppScreen.BOARDING || activeScreen == AppScreen.PICKUP_FINDER,
           isDark = isDark,
           activeColor = activeColor,
@@ -132,7 +133,7 @@ fun SadaBottomNavigation(
         // 3. INSIGHTS (Standardized Tab 3)
         NavigationTabItem(
           icon = Icons.Default.BarChart,
-          label = "Insights",
+          label = com.example.ui.util.AppStrings.navInsights(language),
           isSelected = activeScreen == AppScreen.INSIGHTS,
           activeColor = activeColor,
           inactiveColor = inactiveColor,

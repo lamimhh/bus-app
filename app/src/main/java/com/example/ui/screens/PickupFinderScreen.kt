@@ -8,6 +8,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -174,6 +175,7 @@ fun PickupFinderScreen(
   val isFindingNearest by viewModel.isFindingNearestStop.collectAsState()
   val recommendedStopId by viewModel.recommendedStopId.collectAsState()
   val mapZoom by viewModel.mapZoom.collectAsState()
+  val currentLanguage by viewModel.currentLanguage.collectAsState()
 
   var selectedZoneFilter by remember { mutableStateOf("All") }
   var isPanoramaModalOpen by remember { mutableStateOf(false) }
@@ -374,6 +376,7 @@ fun PickupFinderScreen(
     SadaBottomNavigation(
       activeScreen = AppScreen.BOARDING,
       onNavigate = { screen -> viewModel.navigateTo(screen) },
+      language = currentLanguage,
       modifier = Modifier.align(Alignment.BottomCenter)
     )
 
@@ -466,12 +469,28 @@ private fun BoardingHeader(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
       ) {
-        Icon(
-          imageVector = Icons.Default.Person,
-          contentDescription = "Profile",
-          tint = if (SadaTheme.isDark) Color(0xFFF8FAFC) else MaroonDeep,
-          modifier = Modifier.size(20.dp)
-        )
+        if (!userProfile.avatarUri.isNullOrBlank()) {
+          Box(
+            modifier = Modifier
+              .size(22.dp)
+              .clip(CircleShape),
+            contentAlignment = Alignment.Center
+          ) {
+            AsyncImage(
+              model = userProfile.avatarUri,
+              contentDescription = "Profile",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier.fillMaxSize()
+            )
+          }
+        } else {
+          Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = "Profile",
+            tint = if (SadaTheme.isDark) Color(0xFFF8FAFC) else MaroonDeep,
+            modifier = Modifier.size(20.dp)
+          )
+        }
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
           imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

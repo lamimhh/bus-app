@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import coil.compose.AsyncImage
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -114,6 +115,7 @@ fun InsightsScreen(
   modifier: Modifier = Modifier
 ) {
   val userProfile by viewModel.userProfile.collectAsState()
+  val currentLanguage by viewModel.currentLanguage.collectAsState()
 
   // Delay records matching exact image values (MON +42, TUE +67, WED +28, THU +93, FRI +55, SAT +108, SUN +71)
   val delayRecords = remember {
@@ -198,6 +200,7 @@ fun InsightsScreen(
     SadaBottomNavigation(
       activeScreen = AppScreen.INSIGHTS,
       onNavigate = { screen -> viewModel.navigateTo(screen) },
+      language = currentLanguage,
       modifier = Modifier.align(Alignment.BottomCenter)
     )
 
@@ -320,12 +323,28 @@ private fun InsightsHeader(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
       ) {
-        Icon(
-          imageVector = Icons.Default.Person,
-          contentDescription = "Profile",
-          tint = MaroonDeep,
-          modifier = Modifier.size(20.dp)
-        )
+        if (!userProfile.avatarUri.isNullOrBlank()) {
+          Box(
+            modifier = Modifier
+              .size(22.dp)
+              .clip(CircleShape),
+            contentAlignment = Alignment.Center
+          ) {
+            AsyncImage(
+              model = userProfile.avatarUri,
+              contentDescription = "Profile",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier.fillMaxSize()
+            )
+          }
+        } else {
+          Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = "Profile",
+            tint = MaroonDeep,
+            modifier = Modifier.size(20.dp)
+          )
+        }
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
           imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

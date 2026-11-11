@@ -42,6 +42,9 @@ class BusViewModel(
   private val _isDarkMode = MutableStateFlow(false)
   val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
 
+  private val _currentLanguage = MutableStateFlow(com.example.model.AppLanguage.BANGLA)
+  val currentLanguage: StateFlow<com.example.model.AppLanguage> = _currentLanguage.asStateFlow()
+
   fun setDarkMode(enabled: Boolean, context: Context? = null) {
     _isDarkMode.value = enabled
     context?.getSharedPreferences("sada_shundori_prefs", Context.MODE_PRIVATE)?.edit()?.putBoolean("key_dark_mode", enabled)?.apply()
@@ -51,9 +54,34 @@ class BusViewModel(
     setDarkMode(!_isDarkMode.value, context)
   }
 
+  fun setLanguage(lang: com.example.model.AppLanguage, context: Context? = null) {
+    _currentLanguage.value = lang
+    repository.updateUserLanguage(lang.code)
+    context?.getSharedPreferences("sada_shundori_prefs", Context.MODE_PRIVATE)
+      ?.edit()
+      ?.putString("key_app_language", lang.code)
+      ?.apply()
+  }
+
+  fun updateAvatarUri(uriString: String, context: Context? = null) {
+    repository.updateUserAvatar(uriString)
+    context?.getSharedPreferences("sada_shundori_prefs", Context.MODE_PRIVATE)
+      ?.edit()
+      ?.putString("key_avatar_uri", uriString)
+      ?.apply()
+  }
+
   fun initTheme(context: Context) {
     val prefs = context.getSharedPreferences("sada_shundori_prefs", Context.MODE_PRIVATE)
     _isDarkMode.value = prefs.getBoolean("key_dark_mode", false)
+
+    val savedLang = prefs.getString("key_app_language", "bn")
+    _currentLanguage.value = if (savedLang == "en") com.example.model.AppLanguage.ENGLISH else com.example.model.AppLanguage.BANGLA
+
+    val savedAvatar = prefs.getString("key_avatar_uri", null)
+    if (!savedAvatar.isNullOrBlank()) {
+      repository.updateUserAvatar(savedAvatar)
+    }
   }
 
   private val _selectedNoticeCategory = MutableStateFlow("All")
@@ -229,13 +257,17 @@ class BusViewModel(
     fullName: String,
     department: String,
     session: String,
-    email: String
+    email: String,
+    college: String = "Dhaka College",
+    studentId: String = ""
   ) {
     repository.registerUser(
       fullName = fullName,
       department = department,
       session = session,
-      email = email
+      email = email,
+      college = college,
+      studentId = studentId
     )
     _isLoggedIn.value = true
     _screenHistory.clear()

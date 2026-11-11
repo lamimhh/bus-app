@@ -620,23 +620,51 @@ class BusRepository {
     }
   }
 
-  fun registerUser(fullName: String, department: String, session: String, email: String) {
-    val shortName = fullName.trim().split(" ").firstOrNull()?.ifBlank { fullName.trim() } ?: fullName.trim()
+  fun registerUser(
+    fullName: String,
+    department: String,
+    session: String,
+    email: String,
+    college: String = "Dhaka College",
+    studentId: String = ""
+  ) {
+    val cleanName = fullName.trim()
+    val shortName = cleanName.split(" ").firstOrNull()?.ifBlank { cleanName } ?: cleanName
+    val deptCode = department.trim().split(" ").mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
+    val generatedId = if (studentId.isNotBlank()) studentId.trim() else "DC-${session.take(4)}-${deptCode.ifBlank { "ST" }}-${(100..999).random()}"
+    val generatedPass = "SS-DU7C-${(1000..9999).random()}"
+
     _userProfile.update { current ->
       current.copy(
-        fullName = fullName.trim(),
+        fullName = cleanName,
         name = shortName,
         department = department.trim(),
         session = session.trim(),
-        email = email.trim()
+        email = email.trim(),
+        college = college.trim(),
+        studentId = generatedId,
+        passId = generatedPass
       )
     }
   }
 
   fun loginUser(email: String) {
+    val cleanEmail = email.trim()
     _userProfile.update { current ->
-      current.copy(email = email.trim())
+      val derivedName = if (cleanEmail.contains("@")) cleanEmail.substringBefore("@").replace(".", " ").capitalize() else current.name
+      current.copy(
+        email = cleanEmail,
+        name = if (current.name.isBlank() || current.name == "Lamim") derivedName else current.name
+      )
     }
+  }
+
+  fun updateUserAvatar(uriString: String) {
+    _userProfile.update { it.copy(avatarUri = uriString) }
+  }
+
+  fun updateUserLanguage(langCode: String) {
+    _userProfile.update { it.copy(language = langCode) }
   }
 
   fun updateSimulatedSpeed(delta: Int) {

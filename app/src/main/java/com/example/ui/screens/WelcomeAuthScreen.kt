@@ -57,11 +57,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.model.AppLanguage
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -107,6 +110,9 @@ fun WelcomeAuthScreen(
   var isRegisterMode by remember { mutableStateOf(false) }
   var showLegalDialog by remember { mutableStateOf<String?>(null) }
 
+  val currentLanguage by viewModel.currentLanguage.collectAsState()
+  val context = androidx.compose.ui.platform.LocalContext.current
+
   Box(
     modifier = modifier
       .fillMaxSize()
@@ -120,6 +126,41 @@ fun WelcomeAuthScreen(
         )
       )
   ) {
+    // Top-Right Language Switcher Chip
+    Surface(
+      shape = RoundedCornerShape(16.dp),
+      color = CreamCard,
+      shadowElevation = 2.dp,
+      border = androidx.compose.foundation.BorderStroke(1.dp, MaroonHeading.copy(alpha = 0.35f)),
+      modifier = Modifier
+        .align(Alignment.TopEnd)
+        .padding(top = 36.dp, end = 20.dp)
+        .clickable {
+          val next = if (currentLanguage.isBangla) AppLanguage.ENGLISH else AppLanguage.BANGLA
+          viewModel.setLanguage(next, context)
+        }
+        .testTag("welcome_language_switcher")
+    ) {
+      Row(
+        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          imageVector = Icons.Default.Language,
+          contentDescription = "Language",
+          tint = MaroonHeading,
+          modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+          text = if (currentLanguage.isBangla) "English" else "বাংলা",
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Bold,
+          color = MaroonHeading
+        )
+      }
+    }
+
     // Subtle background dot pattern in top corners
     Canvas(modifier = Modifier.fillMaxSize()) {
       val dotColor = Color(0xFFDDD2C4).copy(alpha = 0.45f)
@@ -167,31 +208,43 @@ fun WelcomeAuthScreen(
 
       Spacer(modifier = Modifier.height(12.dp))
 
-      // App Title: SADA SHUNDORI in Serif
-      Text(
-        text = "SADA",
-        fontSize = 28.sp,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Serif,
-        color = MaroonHeading,
-        letterSpacing = 3.sp,
-        textAlign = TextAlign.Center
-      )
-      Text(
-        text = "SHUNDORI",
-        fontSize = 28.sp,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Serif,
-        color = MaroonHeading,
-        letterSpacing = 3.sp,
-        textAlign = TextAlign.Center
-      )
+      // App Title
+      if (currentLanguage.isBangla) {
+        Text(
+          text = "সাদা সুন্দরী",
+          fontSize = 32.sp,
+          fontWeight = FontWeight.Bold,
+          fontFamily = FontFamily.Serif,
+          color = MaroonHeading,
+          letterSpacing = 2.sp,
+          textAlign = TextAlign.Center
+        )
+      } else {
+        Text(
+          text = "SADA",
+          fontSize = 28.sp,
+          fontWeight = FontWeight.Bold,
+          fontFamily = FontFamily.Serif,
+          color = MaroonHeading,
+          letterSpacing = 3.sp,
+          textAlign = TextAlign.Center
+        )
+        Text(
+          text = "SHUNDORI",
+          fontSize = 28.sp,
+          fontWeight = FontWeight.Bold,
+          fontFamily = FontFamily.Serif,
+          color = MaroonHeading,
+          letterSpacing = 3.sp,
+          textAlign = TextAlign.Center
+        )
+      }
 
       Spacer(modifier = Modifier.height(6.dp))
 
-      // Subtitle: THE CAMPUS BUS COMMUNITY
+      // Subtitle
       Text(
-        text = "THE CAMPUS BUS COMMUNITY",
+        text = if (currentLanguage.isBangla) "ক্যাম্পাস বাস কমিউনিটি" else "THE CAMPUS BUS COMMUNITY",
         fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
         color = TextMutedBrown,
@@ -313,7 +366,7 @@ fun WelcomeAuthScreen(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-              text = "Log In",
+              text = if (currentLanguage.isBangla) "লগ ইন করুন" else "Log In",
               fontSize = 15.sp,
               fontWeight = FontWeight.Bold,
               color = Color.White
@@ -361,7 +414,7 @@ fun WelcomeAuthScreen(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-              text = "Create Account",
+              text = if (currentLanguage.isBangla) "নতুন অ্যাকাউন্ট তৈরি করুন" else "Create Account",
               fontSize = 15.sp,
               fontWeight = FontWeight.Bold,
               color = MaroonDeepButton
@@ -391,7 +444,7 @@ fun WelcomeAuthScreen(
           thickness = 1.dp
         )
         Text(
-          text = "or",
+          text = if (currentLanguage.isBangla) "অথবা" else "or",
           fontSize = 12.sp,
           color = TextMutedBrown,
           modifier = Modifier.padding(horizontal = 12.dp)
@@ -419,7 +472,7 @@ fun WelcomeAuthScreen(
           )
           Spacer(modifier = Modifier.width(8.dp))
           Text(
-            text = "Continue as guest",
+            text = if (currentLanguage.isBangla) "গেস্ট হিসেবে প্রবেশ করুন" else "Continue as guest",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = MaroonHeading

@@ -22,6 +22,13 @@ enum class BusConnectionState(val label: String) {
   OFFLINE("OFFLINE")
 }
 
+enum class AppLanguage(val code: String, val titleBengali: String, val titleEnglish: String) {
+  BANGLA("bn", "বাংলা", "Bangla"),
+  ENGLISH("en", "ইংরেজি", "English");
+
+  val isBangla: Boolean get() = this == BANGLA
+}
+
 data class UserProfile(
   val name: String = "Lamim",
   val fullName: String = "Hafiz Hossain Lamim",
@@ -35,7 +42,19 @@ data class UserProfile(
   val emergencyContact: String = "+880 1712-345678",
   val passId: String = "SS-DU7C-9042",
   val passValidity: String = "Valid till Dec 2026",
-  val favoriteStopId: String = "stop_5_tongi_college"
+  val favoriteStopId: String = "stop_5_tongi_college",
+  val avatarUri: String? = null,
+  val language: String = "bn"
+)
+
+data class BusRuleItem(
+  val id: Int,
+  val titleBn: String,
+  val titleEn: String,
+  val descBn: String,
+  val descEn: String,
+  val categoryBn: String,
+  val categoryEn: String
 )
 
 data class BusStop(
